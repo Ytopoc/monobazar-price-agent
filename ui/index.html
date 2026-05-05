@@ -1,0 +1,2776 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Монобазар - AI Оцінка товару</title>
+<style>
+/* ===== Reset & Variables ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --primary: #7C3AED;
+  --primary-dark: #6D28D9;
+  --primary-light: #EDE9FE;
+  --primary-bg: #F5F3FF;
+  --gradient: linear-gradient(135deg, #7C3AED 0%, #6366F1 100%);
+  --bg: #FAFAFA;
+  --white: #FFFFFF;
+  --text: #1F2937;
+  --text-secondary: #6B7280;
+  --text-muted: #9CA3AF;
+  --border: #E5E7EB;
+  --border-light: #F3F4F6;
+  --success: #10B981;
+  --success-bg: #ECFDF5;
+  --warning: #F59E0B;
+  --error: #EF4444;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.06);
+  --shadow-lg: 0 10px 15px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.05);
+  --radius: 16px;
+  --radius-sm: 12px;
+  --radius-xs: 8px;
+  --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+html { height: 100%; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100%;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ===== App Container ===== */
+.app {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background: var(--white);
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* ===== Progress Bar ===== */
+.progress-bar {
+  display: flex;
+  gap: 4px;
+  padding: 12px 20px;
+  position: sticky;
+  top: 0;
+  background: var(--white);
+  z-index: 100;
+}
+.progress-bar .seg {
+  flex: 1;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--border-light);
+  transition: background var(--transition);
+}
+.progress-bar .seg.done { background: var(--primary); }
+.progress-bar .seg.active {
+  background: linear-gradient(90deg, var(--primary) 60%, var(--border-light) 100%);
+}
+
+/* ===== Header ===== */
+.header {
+  display: flex;
+  align-items: center;
+  padding: 8px 20px 16px;
+}
+.btn-back {
+  width: 40px; height: 40px;
+  border: none; background: none;
+  cursor: pointer; font-size: 20px;
+  color: var(--text);
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  transition: background var(--transition);
+  margin-left: -8px;
+}
+.btn-back:hover { background: var(--border-light); }
+
+/* ===== Screens ===== */
+.screen {
+  display: none;
+  padding: 0 20px 100px;
+  animation: fadeIn 0.35s ease;
+}
+.screen.active { display: block; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.screen-title {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.3;
+  margin-bottom: 6px;
+}
+.screen-subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 24px;
+  line-height: 1.4;
+}
+
+/* ===== Bottom Action ===== */
+.bottom-action {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 480px;
+  padding: 12px 20px;
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+  background: linear-gradient(transparent, var(--white) 20%);
+  z-index: 50;
+}
+.btn-primary {
+  width: 100%;
+  padding: 16px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--gradient);
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+.btn-primary:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
+.btn-primary:active { transform: translateY(0); }
+.btn-primary:disabled {
+  background: var(--border);
+  color: var(--text-muted);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+.btn-secondary {
+  width: 100%;
+  padding: 16px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--white);
+  color: var(--text-secondary);
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition);
+  margin-top: 8px;
+}
+.btn-secondary:hover { border-color: var(--primary); color: var(--primary); }
+
+/* ===== Photo Upload ===== */
+.upload-zone {
+  border: 2px dashed var(--primary);
+  border-radius: var(--radius);
+  background: var(--primary-bg);
+  padding: 40px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all var(--transition);
+  margin-bottom: 12px;
+}
+.upload-zone:hover { background: var(--primary-light); border-color: var(--primary-dark); }
+.upload-zone.has-photos { padding: 16px; }
+
+.upload-icon {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  background: var(--gradient);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 12px;
+  font-size: 24px;
+  color: white;
+}
+.upload-label {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+.upload-hint {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.photo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.photo-thumb {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: var(--radius-xs);
+  overflow: hidden;
+  border: 2px solid var(--border-light);
+  cursor: grab;
+  transition: transform 0.15s, opacity 0.15s, border-color 0.15s;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.photo-thumb.dragging {
+  opacity: 0.4;
+  border-color: var(--primary);
+  transform: scale(0.95);
+}
+.photo-thumb.drag-over {
+  border-color: var(--primary);
+  transform: scale(1.05);
+}
+.photo-thumb img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+.photo-thumb .badge-main {
+  position: absolute;
+  top: 4px; left: 4px;
+  background: var(--gradient);
+  color: white;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  pointer-events: none;
+}
+.photo-thumb .badge-order {
+  position: absolute;
+  bottom: 4px; left: 4px;
+  background: rgba(0,0,0,0.55);
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  pointer-events: none;
+}
+.photo-thumb .btn-remove {
+  position: absolute;
+  top: 4px; right: 4px;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.5);
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+  line-height: 1;
+}
+.photo-add-btn {
+  aspect-ratio: 1;
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-xs);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition);
+  background: var(--bg);
+  gap: 4px;
+}
+.photo-add-btn:hover { border-color: var(--primary); background: var(--primary-bg); }
+.photo-add-btn span { font-size: 24px; color: var(--text-muted); }
+.photo-add-btn small { font-size: 11px; color: var(--text-muted); }
+
+.photo-counter {
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 20px;
+}
+
+/* ===== Tip Card ===== */
+.tip-card {
+  background: var(--primary-bg);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  margin-top: 16px;
+}
+.tip-card h4 {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.tip-card ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.tip-card li {
+  font-size: 13px;
+  color: var(--text-secondary);
+  padding-left: 14px;
+  position: relative;
+  line-height: 1.4;
+}
+.tip-card li::before {
+  content: "\2022";
+  position: absolute;
+  left: 0;
+  color: var(--primary);
+  font-weight: bold;
+}
+
+/* ===== Description Input ===== */
+.textarea-wrap {
+  position: relative;
+  margin-bottom: 8px;
+}
+.textarea-wrap textarea {
+  width: 100%;
+  min-height: 160px;
+  padding: 16px;
+  border: 2px solid var(--primary);
+  border-radius: var(--radius);
+  font-family: inherit;
+  font-size: 15px;
+  line-height: 1.5;
+  resize: vertical;
+  outline: none;
+  transition: border-color var(--transition);
+  background: var(--primary-bg);
+  color: var(--text);
+}
+.textarea-wrap textarea::placeholder { color: var(--text-muted); }
+.textarea-wrap textarea:focus { border-color: var(--primary-dark); background: var(--white); }
+.char-count {
+  position: absolute;
+  bottom: 12px; right: 12px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* ===== Category Selector ===== */
+.category-section { margin-top: 20px; margin-bottom: 16px; }
+.category-section label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 8px;
+  display: block;
+}
+.category-select {
+  width: 100%;
+  padding: 14px 16px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 15px;
+  color: var(--text);
+  background: var(--white);
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236B7280' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  cursor: pointer;
+  outline: none;
+  transition: border-color var(--transition);
+}
+.category-select:focus { border-color: var(--primary); }
+
+/* ===== Processing Screen ===== */
+.processing-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 70vh;
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.ai-avatar {
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  background: var(--gradient);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+  position: relative;
+  animation: pulse-ring 2s ease-in-out infinite;
+}
+.ai-avatar::before {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  border: 2px solid var(--primary-light);
+  animation: pulse-ring 2s ease-in-out infinite;
+}
+.ai-avatar svg { width: 36px; height: 36px; fill: white; }
+
+@keyframes pulse-ring {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.8; }
+}
+
+.processing-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.processing-subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 32px;
+}
+
+.processing-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 280px;
+}
+.processing-step {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  color: var(--text-muted);
+  transition: color 0.4s ease;
+}
+.processing-step.active { color: var(--text); font-weight: 500; }
+.processing-step.done { color: var(--success); }
+.step-icon {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px;
+  transition: all 0.4s ease;
+  flex-shrink: 0;
+}
+.processing-step.active .step-icon {
+  border-color: var(--primary);
+  background: var(--primary-bg);
+  animation: spin 1.2s linear infinite;
+}
+.processing-step.done .step-icon {
+  border-color: var(--success);
+  background: var(--success-bg);
+  color: var(--success);
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ===== Questions Screen ===== */
+.ai-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.ai-header-avatar {
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  background: var(--gradient);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.ai-header-avatar svg { width: 22px; height: 22px; fill: white; }
+.ai-header-info h3 { font-size: 15px; font-weight: 600; }
+.ai-header-info p { font-size: 12px; color: var(--text-secondary); }
+
+.question-card {
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  padding: 20px;
+  margin-bottom: 20px;
+}
+.question-card h3 {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.4;
+  margin-bottom: 6px;
+}
+.question-counter {
+  font-size: 13px;
+  color: var(--primary);
+  font-weight: 500;
+}
+
+.option-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.option-btn {
+  width: 100%;
+  padding: 16px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--white);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  transition: all var(--transition);
+}
+.option-btn:hover { border-color: var(--primary); background: var(--primary-bg); }
+.option-btn.selected {
+  border-color: var(--primary);
+  background: var(--primary-light);
+  color: var(--primary-dark);
+}
+
+.text-input {
+  width: 100%;
+  padding: 16px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 15px;
+  outline: none;
+  transition: border-color var(--transition);
+}
+.text-input:focus { border-color: var(--primary); }
+
+.detected-attrs {
+  margin-bottom: 20px;
+}
+.detected-attrs h4 {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--success);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.attr-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.attr-tag {
+  padding: 4px 10px;
+  background: var(--success-bg);
+  color: #065F46;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* ===== Results Screen ===== */
+.price-card {
+  background: var(--white);
+  border: 2px solid var(--border-light);
+  border-radius: var(--radius);
+  padding: 28px 20px;
+  text-align: center;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-md);
+}
+.price-display {
+  font-size: 42px;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 16px;
+  line-height: 1;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+}
+.price-input {
+  font-size: 42px;
+  font-weight: 800;
+  color: var(--text);
+  border: none;
+  background: none;
+  text-align: right;
+  width: auto;
+  max-width: 200px;
+  padding: 0;
+  outline: none;
+  font-family: inherit;
+  line-height: 1;
+  border-bottom: 2px solid transparent;
+  transition: border-color var(--transition);
+}
+.price-input:focus {
+  border-bottom-color: var(--primary);
+}
+.price-display .currency {
+  font-size: 28px;
+  font-weight: 600;
+  margin-left: 4px;
+}
+.price-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-top: 1px solid var(--border-light);
+  padding-top: 16px;
+}
+.price-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+}
+.price-row .label { color: var(--text-secondary); }
+.price-row .value { font-weight: 600; }
+.price-row .value.net { color: var(--primary); font-size: 16px; }
+
+/* ===== Slider ===== */
+.slider-section {
+  margin: 20px 0;
+}
+.slider-wrap {
+  padding: 0 4px;
+}
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  background: var(--border-light);
+  border-radius: 3px;
+  outline: none;
+  margin: 16px 0;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--gradient);
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(124, 58, 237, 0.4);
+  transition: transform 0.15s ease;
+}
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+input[type="range"]::-moz-range-thumb {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--gradient);
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 6px rgba(124, 58, 237, 0.4);
+}
+.slider-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* ===== Strategy Buttons ===== */
+.strategy-btns {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+.strategy-btn {
+  flex: 1;
+  padding: 12px 8px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-xs);
+  background: var(--white);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition);
+  text-align: center;
+}
+.strategy-btn:hover { border-color: var(--primary); }
+.strategy-btn.active {
+  border-color: var(--primary);
+  background: var(--gradient);
+  color: white;
+}
+
+.strategy-desc {
+  margin-top: 12px;
+  padding: 14px;
+  background: var(--primary-bg);
+  border-radius: var(--radius-xs);
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.strategy-desc .days-badge {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  background: var(--primary);
+  color: white;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ===== Info Cards ===== */
+.info-card {
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  margin-top: 16px;
+}
+.info-card h4 {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.info-card p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+/* ===== Comparables Grid (mini-ad cards) ===== */
+.comp-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.comp-card {
+  display: flex;
+  gap: 12px;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  padding: 10px;
+  border: 1px solid var(--border-light);
+}
+.comp-card-photo {
+  width: 72px; height: 72px;
+  border-radius: var(--radius-xs);
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--border-light);
+}
+.comp-card-photo img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+}
+.comp-card-photo .no-photo {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px; color: var(--text-muted);
+}
+.comp-card-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-width: 0;
+}
+.comp-card-title {
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.3;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.comp-card-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 4px;
+}
+.comp-card-price {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+}
+.comp-card-status {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.comp-card-status.sold { background: var(--success-bg); color: #065F46; }
+.comp-card-status.active { background: #EFF6FF; color: #1D4ED8; }
+
+/* ===== Generate Listing Button ===== */
+.btn-generate-listing {
+  display: block;
+  width: 100%;
+  padding: 16px;
+  margin-top: 20px;
+  background: var(--gradient);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity var(--transition), transform var(--transition);
+  box-shadow: var(--shadow-md);
+}
+.btn-generate-listing:hover {
+  opacity: 0.92;
+  transform: translateY(-1px);
+}
+.btn-generate-listing:active {
+  transform: translateY(0);
+}
+
+/* ===== Listing Preview Modal ===== */
+.listing-modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 1000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.listing-modal-overlay.hidden { display: none; }
+.listing-modal {
+  background: var(--white);
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  border-radius: 20px 20px 0 0;
+  overflow-y: auto;
+  animation: slideUp 0.3s ease-out;
+}
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+.listing-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-light);
+  position: sticky;
+  top: 0;
+  background: var(--white);
+  z-index: 1;
+}
+.listing-modal-header h3 {
+  font-size: 18px;
+  font-weight: 600;
+}
+.btn-close-modal {
+  width: 36px; height: 36px;
+  border: none; background: var(--border-light);
+  border-radius: 50%; font-size: 20px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-secondary);
+}
+.listing-modal-body {
+  padding: 20px;
+}
+.listing-preview-photos {
+  display: grid;
+  gap: 3px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  /* Default 2-col layout */
+  grid-template-columns: 1fr 1fr;
+  grid-auto-rows: 1fr;
+}
+.listing-preview-photos.photos-1 {
+  grid-template-columns: 1fr;
+}
+.listing-preview-photos.photos-2 {
+  grid-template-columns: 1fr 1fr;
+}
+.listing-preview-photos.photos-3 {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1.4fr 1fr;
+}
+.listing-preview-photos.photos-3 .listing-preview-photo:first-child {
+  grid-column: span 2;
+}
+.listing-preview-photos.photos-4 {
+  grid-template-columns: 1fr 1fr;
+}
+.listing-preview-photos.photos-5 {
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 1.4fr 1fr;
+}
+.listing-preview-photos.photos-5 .listing-preview-photo:nth-child(1) {
+  grid-column: span 2;
+  grid-row: span 1;
+}
+.listing-preview-photos.photos-5 .listing-preview-photo:nth-child(2) {
+  grid-column: 3;
+  grid-row: 1;
+}
+.listing-preview-photo {
+  overflow: hidden;
+  position: relative;
+  min-height: 0;
+}
+.listing-preview-photo img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+}
+.listing-preview-photo-more {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex; align-items: center; justify-content: center;
+  color: white; font-size: 24px; font-weight: 700;
+}
+.listing-preview-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 16px 0 8px;
+  color: var(--text);
+  line-height: 1.3;
+}
+.listing-preview-price {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  background: var(--border-light);
+  border-radius: var(--radius-xs);
+  text-align: center;
+}
+.listing-preview-specs {
+  padding: 16px;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-light);
+  margin-bottom: 12px;
+}
+.listing-preview-spec {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  font-size: 14px;
+  border-bottom: 1px solid var(--border-light);
+}
+.listing-preview-spec:last-child { border-bottom: none; }
+.listing-preview-spec-label { color: var(--text-secondary); }
+.listing-preview-spec-value { color: var(--text); font-weight: 500; }
+.listing-preview-desc {
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.7;
+  white-space: pre-line;
+  padding: 16px;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-light);
+  width: 100%;
+  min-height: 80px;
+  resize: vertical;
+  font-family: inherit;
+  outline: none;
+  transition: border-color var(--transition);
+  display: block;
+}
+.listing-preview-desc:focus {
+  border-color: var(--primary);
+  background: var(--white);
+}
+.listing-preview-desc-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.listing-preview-actions {
+  display: flex; gap: 12px;
+  margin-top: 20px;
+}
+.listing-preview-actions button {
+  flex: 1; padding: 14px;
+  border-radius: var(--radius-xs);
+  font-size: 15px; font-weight: 600;
+  cursor: pointer; border: none;
+}
+.btn-listing-fav {
+  background: #FEE2E2; color: #EF4444;
+  width: 56px !important; flex: none !important;
+  font-size: 22px !important;
+}
+.btn-listing-create {
+  background: var(--primary); color: white;
+}
+
+.confidence-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+.confidence-track {
+  flex: 1;
+  height: 6px;
+  background: var(--border-light);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.confidence-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 1s ease;
+}
+.confidence-label {
+  font-size: 13px;
+  font-weight: 600;
+  min-width: 40px;
+  text-align: right;
+}
+
+.tips-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.tips-list li {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  padding-left: 20px;
+  position: relative;
+}
+.tips-list li::before {
+  content: "\1F4A1";
+  position: absolute;
+  left: 0;
+  font-size: 12px;
+}
+
+/* ===== Error ===== */
+.error-card {
+  background: #FEF2F2;
+  border: 1px solid #FECACA;
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  text-align: center;
+  margin: 20px 0;
+}
+.error-card h4 { color: var(--error); margin-bottom: 8px; }
+.error-card p { font-size: 14px; color: #991B1B; }
+.error-card button {
+  margin-top: 12px;
+  padding: 10px 24px;
+  border: none;
+  border-radius: var(--radius-xs);
+  background: var(--error);
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* ===== Loading shimmer ===== */
+.loading-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.loading-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(124,58,237,0.06), transparent);
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* ===== Utility ===== */
+.hidden { display: none !important; }
+.mt-12 { margin-top: 12px; }
+.mt-20 { margin-top: 20px; }
+.mb-16 { margin-bottom: 16px; }
+
+/* ===== Desktop ===== */
+@media (min-width: 520px) {
+  body { background: #F0EFFF; }
+  .app {
+    margin-top: 20px;
+    margin-bottom: 20px;
+    border-radius: 24px;
+    box-shadow: var(--shadow-lg);
+    min-height: calc(100vh - 40px);
+  }
+  .bottom-action {
+    border-radius: 0 0 24px 24px;
+  }
+}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+  <!-- ===== Progress Bar ===== -->
+  <div class="progress-bar" id="progressBar">
+    <div class="seg done" data-step="1"></div>
+    <div class="seg" data-step="2"></div>
+    <div class="seg" data-step="3"></div>
+    <div class="seg" data-step="4"></div>
+    <div class="seg" data-step="5"></div>
+  </div>
+
+  <!-- ===== SCREEN 1: Photos ===== -->
+  <div class="screen active" id="screenPhotos">
+    <div class="header">
+      <button class="btn-back" onclick="window.history.back()">&#8592;</button>
+    </div>
+    <h1 class="screen-title">Додайте фото товару</h1>
+    <p class="screen-subtitle">Перше фото буде головним. Додайте до 5 фото.</p>
+
+    <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+      <div class="upload-icon">&#128247;</div>
+      <div class="upload-label">Додати головне фото</div>
+      <div class="upload-hint">JPG, PNG, WebP</div>
+    </div>
+
+    <div class="photo-grid hidden" id="photoGrid"></div>
+
+    <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp" multiple hidden>
+
+    <div class="photo-counter" id="photoCounter">0 з 5 фото</div>
+
+    <div class="tip-card">
+      <h4>&#128161; Поради для фото</h4>
+      <ul>
+        <li>Фотографуйте при хорошому освітленні</li>
+        <li>Покажіть товар з різних ракурсів</li>
+        <li>Додайте фото дефектів, якщо є</li>
+      </ul>
+    </div>
+
+    <div class="bottom-action">
+      <button class="btn-primary" id="btnPhotosNext" onclick="goToDescription()">Далі</button>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN 2: Description ===== -->
+  <div class="screen" id="screenDescription">
+    <div class="header">
+      <button class="btn-back" onclick="goToPhotos()">&#8592;</button>
+    </div>
+    <h1 class="screen-title">Опишіть ваш товар</h1>
+    <p class="screen-subtitle">Додайте детальний опис, щоб привернути увагу покупців</p>
+
+    <div class="textarea-wrap">
+      <textarea id="descInput" minlength="10" maxlength="500"
+        placeholder="Наприклад: iPhone 14 Pro 256GB в ідеальному стані. Куплений 6 місяців тому, є чек. Завжди використовувався з чохлом та захисним склом. Батарея тримає 100%. В комплекті оригінальна коробка, зарядка та кабель..."></textarea>
+      <span class="char-count" id="charCount">0/500</span>
+    </div>
+
+    <div class="category-section">
+      <label>Категорія (необов'язково)</label>
+      <select class="category-select" id="categorySelect">
+        <option value="">Автовизначення</option>
+        <option value="4">Смартфони Apple</option>
+        <option value="512">Кросівки</option>
+        <option value="743">Конструктори</option>
+        <option value="795">Книги та журнали</option>
+        <option value="1261">Шини</option>
+        <option value="1320">Крісла</option>
+        <option value="1677">Фігурки та колекціонування</option>
+      </select>
+    </div>
+
+    <div class="tip-card">
+      <h4>&#128161; Що варто вказати</h4>
+      <ul>
+        <li>Стан товару та термін використання</li>
+        <li>Комплектація (коробка, зарядка, аксесуари)</li>
+        <li>Наявність дефектів або слідів використання</li>
+        <li>Причина продажу (за бажанням)</li>
+      </ul>
+    </div>
+
+    <div class="bottom-action">
+      <button class="btn-primary" id="btnDescSubmit" onclick="submitPhase1()">Далі</button>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN 3: Processing ===== -->
+  <div class="screen" id="screenProcessing">
+    <div class="processing-screen">
+      <div class="ai-avatar">
+        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+      </div>
+      <h2 class="processing-title" id="processingTitle">ШI аналізує ваш товар...</h2>
+      <p class="processing-subtitle" id="processingSubtitle">Це може зайняти кілька секунд</p>
+      <div class="processing-steps" id="processingSteps">
+        <div class="processing-step active" data-step="analyze">
+          <div class="step-icon">&#9679;</div>
+          <span>Аналіз фотографій та опису</span>
+        </div>
+        <div class="processing-step" data-step="category">
+          <div class="step-icon">&#9679;</div>
+          <span>Визначення категорії</span>
+        </div>
+        <div class="processing-step" data-step="search">
+          <div class="step-icon">&#9679;</div>
+          <span>Пошук аналогів на ринку</span>
+        </div>
+        <div class="processing-step" data-step="price">
+          <div class="step-icon">&#9679;</div>
+          <span>Розрахунок оптимальної ціни</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN 4: Questions ===== -->
+  <div class="screen" id="screenQuestions">
+    <div class="header">
+      <button class="btn-back" onclick="goToDescription()">&#8592;</button>
+    </div>
+
+    <div class="ai-header">
+      <div class="ai-header-avatar">
+        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+      </div>
+      <div class="ai-header-info">
+        <h3>ШI Асистент</h3>
+        <p>Допоможу створити оголошення</p>
+      </div>
+    </div>
+
+    <div class="detected-attrs hidden" id="detectedAttrs" style="display:none !important">
+      <h4>&#10003; Вже визначено:</h4>
+      <div class="attr-tags" id="attrTags"></div>
+    </div>
+
+    <div id="questionContainer"></div>
+
+    <div class="bottom-action">
+      <button class="btn-primary" id="btnQuestionNext" onclick="nextQuestion()">Далі</button>
+      <button class="btn-secondary" onclick="skipQuestion()">Пропустити питання</button>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN 5: Results ===== -->
+  <div class="screen" id="screenResults">
+    <div class="header">
+      <button class="btn-back" onclick="resetAll()">&#8592;</button>
+    </div>
+    <h1 class="screen-title">Яка ціна вашого товару?</h1>
+
+    <div class="price-card">
+      <div class="price-display" id="priceDisplay">
+        <input type="text" id="priceInput" class="price-input" value="0" inputmode="numeric">
+        <span class="currency"> &#8372;</span>
+      </div>
+      <div class="price-details">
+        <div class="price-row">
+          <span class="label">Комісія Marketplace</span>
+          <span class="value">1.9%</span>
+        </div>
+        <div class="price-row">
+          <span class="label">Ви отримаєте</span>
+          <span class="value net" id="netPrice">0 &#8372;</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="slider-section">
+      <div class="slider-wrap">
+        <input type="range" id="priceSlider" min="0" max="100" value="50">
+      </div>
+      <div class="slider-labels">
+        <span id="sliderMin">0 &#8372;</span>
+        <span id="sliderMax">0 &#8372;</span>
+      </div>
+
+      <div class="strategy-btns">
+        <button class="strategy-btn" data-idx="0" onclick="selectStrategy(0)">Мінімальна</button>
+        <button class="strategy-btn active" data-idx="1" onclick="selectStrategy(1)">Середня</button>
+        <button class="strategy-btn" data-idx="2" onclick="selectStrategy(2)">Максимальна</button>
+      </div>
+
+      <div class="strategy-desc" id="strategyDesc">
+        <span class="days-badge" id="daysBadge">~7 днів</span>
+        <span id="strategyText">Оптимальна ціна для продажу</span>
+      </div>
+    </div>
+
+    <!-- Confidence -->
+    <div class="info-card">
+      <div class="confidence-bar">
+        <span style="font-size:13px; color:var(--text-secondary)">Впевненість</span>
+        <div class="confidence-track">
+          <div class="confidence-fill" id="confidenceFill" style="width:0%"></div>
+        </div>
+        <span class="confidence-label" id="confidenceLabel">0%</span>
+      </div>
+    </div>
+
+    <!-- Market Analysis -->
+    <div class="info-card" id="cardAnalysis">
+      <h4>&#128202; Аналіз ринку</h4>
+      <p id="marketAnalysisText"></p>
+    </div>
+
+    <!-- Recommendation -->
+    <div class="info-card" id="cardRecommendation">
+      <h4>&#9889; Рекомендація ШI</h4>
+      <p id="recommendationText"></p>
+    </div>
+
+    <!-- Condition Impact -->
+    <div class="info-card hidden" id="cardCondition">
+      <h4>&#128736; Вплив стану</h4>
+      <p id="conditionText"></p>
+    </div>
+
+    <!-- Tips -->
+    <div class="info-card hidden" id="cardTips">
+      <h4>&#128161; Поради для продажу</h4>
+      <ul class="tips-list" id="tipsList"></ul>
+    </div>
+
+    <!-- Comparables -->
+    <div class="info-card hidden" id="cardComparables">
+      <h4>&#128200; Схожі товари на Монобазарі</h4>
+      <div id="comparablesList" class="comp-grid"></div>
+    </div>
+
+    <!-- Generate Listing Button -->
+    <button class="btn-generate-listing" id="btnGenerateListing" onclick="showListingPreview()">
+      Згенерувати оголошення
+    </button>
+
+    <div style="height: 20px;"></div>
+  </div>
+
+  <!-- ===== MODAL: Listing Preview ===== -->
+  <div class="listing-modal-overlay hidden" id="listingModal">
+    <div class="listing-modal">
+      <div class="listing-modal-header">
+        <h3>Ваше оголошення</h3>
+        <button class="btn-close-modal" onclick="closeListingModal()">&times;</button>
+      </div>
+      <div class="listing-modal-body" id="listingModalBody">
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN: Error ===== -->
+  <div class="screen" id="screenError">
+    <div class="processing-screen">
+      <div class="error-card">
+        <h4>Помилка</h4>
+        <p id="errorText">Щось пішло не так. Спробуйте ще раз.</p>
+        <button onclick="resetAll()">Спробувати знову</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ===== State =====
+const state = {
+  photos: [],          // { file, url, b64 }
+  description: '',
+  categoryId: null,
+  phase1: null,         // result from pre-analyze or /price Phase 1
+  photoAnalysisPromise: null,  // background deep photo analysis (vision model)
+  photoAnalysis: null,         // result of deep photo analysis
+  preAnalyzePromise: null,     // background pre-analyze fetch
+  preAnalyzeDone: false,
+  questions: [],
+  stillMissing: [],
+  enrichedAttrs: {},
+  currentQuestion: 0,
+  answers: {},
+  result: null,
+  listingDesc: '',  // saved listing description text (user-edited)
+  aiListingText: '',  // generated listing description
+};
+
+const API_BASE = window.location.origin + '/api/v1';
+
+// ===== Screen Management =====
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function updateProgress(step) {
+  document.querySelectorAll('.progress-bar .seg').forEach(seg => {
+    const s = parseInt(seg.dataset.step);
+    seg.classList.remove('done', 'active');
+    if (s < step) seg.classList.add('done');
+    else if (s === step) seg.classList.add('done');
+  });
+}
+
+// ===== Photo Handling =====
+const fileInput = document.getElementById('fileInput');
+const uploadZone = document.getElementById('uploadZone');
+const photoGrid = document.getElementById('photoGrid');
+const photoCounter = document.getElementById('photoCounter');
+
+fileInput.addEventListener('change', (e) => {
+  const files = Array.from(e.target.files);
+  addPhotos(files);
+  fileInput.value = '';
+});
+
+// Drag & drop
+uploadZone.addEventListener('dragover', (e) => { e.preventDefault(); uploadZone.style.borderColor = '#6D28D9'; });
+uploadZone.addEventListener('dragleave', () => { uploadZone.style.borderColor = ''; });
+uploadZone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  uploadZone.style.borderColor = '';
+  const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+  addPhotos(files);
+});
+
+function addPhotos(files) {
+  const remaining = 5 - state.photos.length;
+  const toAdd = files.slice(0, remaining);
+
+  toAdd.forEach(file => {
+    const url = URL.createObjectURL(file);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const b64 = e.target.result.split(',')[1];
+      state.photos.push({ file, url, b64 });
+      renderPhotos();
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function removePhoto(index) {
+  URL.revokeObjectURL(state.photos[index].url);
+  state.photos.splice(index, 1);
+  renderPhotos();
+}
+
+function renderPhotos() {
+  const n = state.photos.length;
+  photoCounter.textContent = `${n} з 5 фото`;
+
+  if (n === 0) {
+    uploadZone.classList.remove('hidden', 'has-photos');
+    photoGrid.classList.add('hidden');
+    return;
+  }
+
+  uploadZone.classList.add('hidden');
+  photoGrid.classList.remove('hidden');
+
+  let html = '';
+  state.photos.forEach((p, i) => {
+    html += `
+      <div class="photo-thumb" draggable="true" data-idx="${i}"
+           ondragstart="onPhotoDragStart(event, ${i})"
+           ondragover="onPhotoDragOver(event)"
+           ondragenter="onPhotoDragEnter(event)"
+           ondragleave="onPhotoDragLeave(event)"
+           ondrop="onPhotoDrop(event, ${i})"
+           ondragend="onPhotoDragEnd(event)"
+           ontouchstart="onPhotoTouchStart(event, ${i})"
+           ontouchmove="onPhotoTouchMove(event)"
+           ontouchend="onPhotoTouchEnd(event, ${i})">
+        <img src="${p.url}" alt="Фото ${i+1}">
+        ${i === 0 ? '<span class="badge-main">Головне</span>' : ''}
+        <span class="badge-order">${i+1}</span>
+        <button class="btn-remove" onclick="event.stopPropagation(); removePhoto(${i})">&times;</button>
+      </div>`;
+  });
+
+  if (n < 5) {
+    html += `
+      <div class="photo-add-btn" onclick="document.getElementById('fileInput').click()">
+        <span>+</span>
+        <small>Додати</small>
+      </div>`;
+  }
+
+  photoGrid.innerHTML = html;
+}
+
+// ===== Photo Drag & Drop Reorder =====
+let _dragIdx = null;
+
+function onPhotoDragStart(e, idx) {
+  _dragIdx = idx;
+  e.target.closest('.photo-thumb').classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+}
+function onPhotoDragOver(e) { e.preventDefault(); }
+function onPhotoDragEnter(e) {
+  const thumb = e.target.closest('.photo-thumb');
+  if (thumb) thumb.classList.add('drag-over');
+}
+function onPhotoDragLeave(e) {
+  const thumb = e.target.closest('.photo-thumb');
+  if (thumb) thumb.classList.remove('drag-over');
+}
+function onPhotoDrop(e, dropIdx) {
+  e.preventDefault();
+  const thumb = e.target.closest('.photo-thumb');
+  if (thumb) thumb.classList.remove('drag-over');
+  if (_dragIdx !== null && _dragIdx !== dropIdx) {
+    swapPhotos(_dragIdx, dropIdx);
+  }
+  _dragIdx = null;
+}
+function onPhotoDragEnd(e) {
+  document.querySelectorAll('.photo-thumb').forEach(t => t.classList.remove('dragging', 'drag-over'));
+  _dragIdx = null;
+}
+
+// Touch support for mobile reorder
+let _touchIdx = null;
+let _touchMoved = false;
+function onPhotoTouchStart(e, idx) {
+  _touchIdx = idx;
+  _touchMoved = false;
+}
+function onPhotoTouchMove(e) {
+  _touchMoved = true;
+}
+function onPhotoTouchEnd(e, idx) {
+  // On tap (not drag): swap with first photo to make it main
+  if (!_touchMoved && _touchIdx === idx && idx !== 0) {
+    swapPhotos(idx, 0);
+  }
+  _touchIdx = null;
+  _touchMoved = false;
+}
+
+function swapPhotos(fromIdx, toIdx) {
+  const temp = state.photos[fromIdx];
+  state.photos[fromIdx] = state.photos[toIdx];
+  state.photos[toIdx] = temp;
+  renderPhotos();
+}
+
+// ===== Description =====
+const descInput = document.getElementById('descInput');
+const charCount = document.getElementById('charCount');
+descInput.addEventListener('input', () => {
+  charCount.textContent = `${descInput.value.length}/500`;
+});
+
+// ===== Navigation =====
+function goToPhotos() {
+  updateProgress(1);
+  showScreen('screenPhotos');
+}
+
+function goToDescription() {
+  updateProgress(2);
+  showScreen('screenDescription');
+
+  // Start pre-analyzing photos in background immediately
+  if (state.photos.length > 0 && !state.preAnalyzeDone) {
+    startPreAnalyze();
+  }
+}
+
+function startPreAnalyze() {
+  const payload = {
+    description: '',
+    photos: state.photos.map(p => p.b64),
+  };
+
+  // Deep photo analysis with vision model — runs while user types description
+  console.log('[Photo] Starting deep photo analysis...');
+  state.photoAnalysisPromise = fetch(`${API_BASE}/analyze-photos`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+  .then(resp => {
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    return resp.json();
+  })
+  .then(data => {
+    console.log('[Photo] Deep analysis done:', data);
+    state.photoAnalysis = data;
+    return data;
+  })
+  .catch(err => {
+    console.warn('[Photo] Deep analysis failed:', err.message);
+    return null;
+  });
+}
+
+// ===== Phase 1 Submit =====
+async function submitPhase1() {
+  state.description = descInput.value.trim();
+  const catSelect = document.getElementById('categorySelect');
+  state.categoryId = catSelect.value ? parseInt(catSelect.value) : null;
+
+  if (!state.description && state.photos.length === 0) {
+    alert('Додайте фото або опис товару');
+    return;
+  }
+  if (state.description && state.description.length < 10) {
+    alert('Опис має бути не менше 10 символів');
+    return;
+  }
+
+  updateProgress(3);
+  showScreen('screenProcessing');
+  animateProcessingSteps(['analyze'], 300);
+
+  try {
+    // ---- 1. Wait for deep photo analysis (vision model, started when photos added) ----
+    let photoAttrs = {};
+    let photoAnalysisText = '';
+    let photoCondition = null;
+
+    let photoDetectedCat = '';
+    if (state.photoAnalysisPromise) {
+      console.log('[Flow] Waiting for deep photo analysis...');
+      const photoResult = await state.photoAnalysisPromise;
+      if (photoResult) {
+        photoAttrs = photoResult.detected_attrs || {};
+        photoAnalysisText = photoResult.photo_analysis || '';
+        photoCondition = photoResult.condition;
+        photoDetectedCat = photoResult.detected_category || '';
+        console.log('[Flow] Photo analysis:', photoResult.condition, Object.keys(photoAttrs));
+      }
+    }
+
+    // ---- 2. Run Phase 1 on description (fast regex, no Vision) ----
+    animateProcessingSteps(['category'], 200);
+
+    const descPayload = {
+      description: state.description || 'товар',
+      photos: [],  // no photos — already analyzed by vision model
+    };
+    if (state.categoryId) descPayload.category_id = state.categoryId;
+
+    const descResp = await fetch(`${API_BASE}/pre-analyze`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(descPayload),
+    });
+
+    if (!descResp.ok) {
+      const err = await descResp.json().catch(() => ({ detail: 'Server error' }));
+      throw new Error(err.detail || `HTTP ${descResp.status}`);
+    }
+
+    const ph1 = await descResp.json();
+    console.log('[Flow] Phase 1 result:', ph1.decision, 'category:', ph1.category_id);
+
+    // ---- 3. Merge attrs: description attrs WIN over photo guesses ----
+    const mergedAttrs = { ...(ph1.structured_attrs || {}) };
+    // NEVER take "model" from photos — vision model often guesses wrong
+    const _PHOTO_SKIP_ATTRS = ['model'];
+    for (const [k, v] of Object.entries(photoAttrs)) {
+      if (_PHOTO_SKIP_ATTRS.includes(k)) continue;
+      if (v && v !== '' && (!mergedAttrs[k] || mergedAttrs[k] === '')) {
+        mergedAttrs[k] = v;
+      }
+    }
+    // Use the WORSE condition between regex and vision model (conservative pricing)
+    const conditionPriority = {
+      'needs_repair': 1, 'fair': 2, 'good': 3, 'very_good': 4, 'like_new': 5, 'new': 6
+    };
+    if (photoCondition) {
+      const photoPrio = conditionPriority[photoCondition] || 3;
+      const regexPrio = conditionPriority[mergedAttrs.condition] || 3;
+      mergedAttrs.condition = photoPrio < regexPrio ? photoCondition : mergedAttrs.condition;
+    }
+    let categoryId = ph1.category_id || state.categoryId;
+
+    // ---- 3b. Photo → category mapping ----
+    const _PHOTO_CAT_MAP = {
+      4:    ['смартфон', 'телефон', 'iphone', 'айфон', 'samsung', 'galaxy', 'phone', 'xiaomi', 'huawei', 'pixel', 'honor', 'мобільний'],
+      512:  ['кросівки', 'кроссовки', 'взуття', 'обувь', 'sneaker', 'shoe', 'черевики', 'туфлі', 'кеди', 'боти'],
+      743:  ['конструктор', 'lego', 'лего', 'набір деталей', 'constructor'],
+      795:  ['книга', 'книжка', 'book', 'журнал'],
+      1677: ['фігурка', 'figurine', 'статуетка', 'колекційна'],
+      1261: ['шина', 'шини', 'колесо', 'колеса', 'диск', 'диски', 'покришк', 'tire', 'wheel'],
+      1320: ['стілець', 'крісло', 'стул', 'кресло', 'chair', 'табурет', 'меблі'],
+    };
+    const _CAT_NAMES = {
+      4: 'Смартфони', 512: 'Кросівки', 743: 'Конструктори',
+      795: 'Книги', 1677: 'Фігурки', 1261: 'Шини/колеса', 1320: 'Стільці/крісла',
+    };
+    const photoDetectedCategory = photoDetectedCat;
+    let photoCatId = null;
+    if (photoDetectedCategory) {
+      const photoCatLower = photoDetectedCategory.toLowerCase();
+      for (const [catId, keywords] of Object.entries(_PHOTO_CAT_MAP)) {
+        if (keywords.some(kw => photoCatLower.includes(kw))) {
+          photoCatId = parseInt(catId);
+          break;
+        }
+      }
+    }
+
+    // Category mismatch: photo shows one item type, description says another → error
+    if (categoryId && photoCatId && photoCatId !== categoryId) {
+      const photoCatName = _CAT_NAMES[photoCatId] || photoDetectedCategory;
+      const textCatName = _CAT_NAMES[categoryId] || ph1.category_name;
+      showError(
+        `На фото "${photoCatName}", але в описі вказано "${textCatName}". ` +
+        `Виправте опис або додайте фото відповідного товару.`
+      );
+      return;
+    }
+
+    // If no text category but photo detected one → use photo's category
+    if (!categoryId && photoCatId) {
+      console.log(`[Flow] No text category, using photo-detected: ${photoCatId}`);
+      categoryId = photoCatId;
+      // Re-run Phase 1 with photo-detected category to get proper required attrs
+      try {
+        const rerunResp = await fetch(`${API_BASE}/pre-analyze`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            description: state.description || 'товар',
+            photos: [],
+            category_id: photoCatId,
+          }),
+        });
+        if (rerunResp.ok) {
+          const ph1b = await rerunResp.json();
+          // Re-merge attrs (keep photo attrs)
+          Object.assign(mergedAttrs, ph1b.structured_attrs || {});
+          for (const [k, v] of Object.entries(photoAttrs)) {
+            if (_PHOTO_SKIP_ATTRS.includes(k)) continue;
+            if (v && v !== '' && (!mergedAttrs[k] || mergedAttrs[k] === '')) {
+              mergedAttrs[k] = v;
+            }
+          }
+          ph1.category_id = photoCatId;
+          ph1.category_name = ph1b.category_name;
+          ph1.missing_attrs = ph1b.missing_attrs;
+          ph1.questions = ph1b.questions;
+          ph1.decision = ph1b.decision;
+        }
+      } catch (e) {
+        console.warn('[Flow] Re-run Phase1 with photo category failed:', e);
+      }
+    }
+
+    // ---- 3c. Vague description check ----
+    // If STILL no category AND description is too vague — force questions
+    const hasModel = !!(mergedAttrs.model || mergedAttrs.set_number || mergedAttrs.title || mergedAttrs.tire_brand);
+    const hasBrand = !!(mergedAttrs.brand);
+    const isVague = !categoryId && !hasModel && !hasBrand;
+
+    if (isVague) {
+      const forcedQuestions = ['До якої категорії належить ваш товар?', 'Яка точна модель вашого товару?', 'Який бренд/виробник?'];
+      const forcedMissing = ['category', 'model', 'brand'];
+
+      state.phase1 = {
+        ...ph1,
+        category_id: null,
+        enriched_attrs: mergedAttrs,
+        enriched_description: state.description || '',
+        needs_clarification: true,
+        still_missing: forcedMissing,
+      };
+      state.questions = forcedQuestions;
+      state.stillMissing = forcedMissing;
+      state.enrichedAttrs = mergedAttrs;
+      state.currentQuestion = 0;
+      state.answers = {};
+      showQuestions();
+      return;
+    }
+
+    // Internal enriched description (for FAISS search + LLM, NOT shown to user)
+    const photoAttrValues = Object.entries(photoAttrs)
+      .filter(([k, v]) => v && !['condition', 'model'].includes(k))
+      .map(([k, v]) => String(v));
+    const enrichedDesc = [
+      ph1.enriched_description || state.description,
+      ...photoAttrValues,
+      photoAnalysisText ? `[Стан з фото: ${photoAnalysisText}]` : '',
+    ].filter(Boolean).join(' ');
+
+    // ---- 4. If needs questions, show them ----
+    if (ph1.decision === 'questions') {
+      // Filter out attrs that are already known (from regex + photo analysis)
+      const rawMissing = ph1.missing_attrs || [];
+      const rawQuestions = ph1.questions || [];
+      const filteredMissing = [];
+      const filteredQuestions = [];
+      for (let i = 0; i < rawMissing.length; i++) {
+        const attr = rawMissing[i];
+        const val = mergedAttrs[attr];
+        // Skip if we already have a meaningful value for this attr
+        if (val && val !== '' && val !== null && val !== undefined) {
+          console.log(`[Flow] Skipping question for "${attr}" — already known: ${val}`);
+          continue;
+        }
+        filteredMissing.push(attr);
+        if (i < rawQuestions.length) filteredQuestions.push(rawQuestions[i]);
+      }
+
+      // If all questions were filtered out — proceed directly
+      if (filteredMissing.length === 0) {
+        console.log('[Flow] All missing attrs already known from photos, proceeding...');
+      } else {
+        state.phase1 = {
+          ...ph1,
+          enriched_attrs: mergedAttrs,
+          enriched_description: enrichedDesc,
+          needs_clarification: true,
+          still_missing: filteredMissing,
+        };
+        state.questions = filteredQuestions;
+        state.stillMissing = filteredMissing;
+        state.enrichedAttrs = mergedAttrs;
+        state.currentQuestion = 0;
+        state.answers = {};
+        showQuestions();
+        return;
+      }
+    }
+
+    // ---- 5. Can proceed → Full pricing ----
+    // categoryId can be null — AI-only fallback will handle it on backend
+
+    await animateProcessingSteps(['search', 'price'], 300);
+
+    const enrichedItem = {
+      category_id: categoryId,
+      category_name: ph1.category_name || '',
+      structured_attrs: mergedAttrs,
+      enriched_description: enrichedDesc,
+    };
+
+    const fullResp = await fetch(`${API_BASE}/price/clarify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        enriched_item: enrichedItem,
+        answers: {},
+        photos: [],  // don't send photos again — already analyzed
+      }),
+    });
+
+    if (!fullResp.ok) {
+      const err = await fullResp.json().catch(() => ({ detail: 'Server error' }));
+      throw new Error(err.detail || `HTTP ${fullResp.status}`);
+    }
+
+    state.result = await fullResp.json();
+    showResults();
+
+  } catch (err) {
+    showError(err.message);
+  }
+}
+
+// ===== Background full explanation loader =====
+async function loadFullExplanation(enrichedItem) {
+  console.log('[Flow] Loading full explanation in background...');
+
+  try {
+    const fullPayload = {
+      enriched_item: enrichedItem,
+      answers: state.answers || {},
+      photos: state.photos.map(p => p.b64),
+    };
+
+    const resp = await fetch(`${API_BASE}/price/clarify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(fullPayload),
+    });
+
+    if (!resp.ok) return;
+
+    const fullResult = await resp.json();
+
+    // Remove loading shimmer
+    document.getElementById('cardAnalysis').classList.remove('loading-shimmer');
+    document.getElementById('cardRecommendation').classList.remove('loading-shimmer');
+
+    // Update UI with richer data (don't touch prices/strategies)
+    if (fullResult.recommendation) {
+      document.getElementById('recommendationText').textContent = fullResult.recommendation;
+      document.getElementById('cardRecommendation').classList.remove('hidden');
+    }
+    if (fullResult.market_analysis) {
+      document.getElementById('marketAnalysisText').textContent = fullResult.market_analysis;
+    }
+    if (fullResult.condition_impact) {
+      document.getElementById('conditionText').textContent = fullResult.condition_impact;
+      document.getElementById('cardCondition').classList.remove('hidden');
+    }
+    if (fullResult.tips && fullResult.tips.length > 0) {
+      document.getElementById('tipsList').innerHTML = fullResult.tips.map(t => `<li>${t}</li>`).join('');
+      document.getElementById('cardTips').classList.remove('hidden');
+    }
+    // Update strategy descriptions from LLM
+    if (fullResult.strategies) {
+      fullResult.strategies.forEach((s, i) => {
+        const strategies = state.result.strategies || [];
+        if (strategies[i]) {
+          strategies[i].description = s.description || strategies[i].description;
+        }
+      });
+      // Refresh current strategy desc display
+      const activeBtn = document.querySelector('.strategy-btn.active');
+      if (activeBtn) {
+        const idx = parseInt(activeBtn.dataset.idx);
+        const s = state.result.strategies[idx];
+        if (s) document.getElementById('strategyText').textContent = s.description || s.name;
+      }
+    }
+
+    // Save AI listing text for preview modal
+    if (fullResult.listing_text) {
+      state.aiListingText = fullResult.listing_text;
+    }
+
+    console.log('[Flow] Full explanation loaded successfully');
+  } catch (e) {
+    console.warn('[Flow] Full explanation failed:', e.message);
+  }
+}
+
+// ===== Processing Animation =====
+function animateProcessingSteps(steps, delay) {
+  return new Promise((resolve) => {
+    const allSteps = document.querySelectorAll('.processing-step');
+    let i = 0;
+
+    function tick() {
+      if (i >= steps.length) { resolve(); return; }
+      allSteps.forEach(s => {
+        if (s.dataset.step === steps[i]) {
+          s.classList.remove('active');
+          s.classList.add('done');
+          s.querySelector('.step-icon').innerHTML = '&#10003;';
+        }
+      });
+      // Activate next if exists
+      const nextStep = allSteps[Array.from(allSteps).findIndex(s => s.dataset.step === steps[i]) + 1];
+      if (nextStep && !nextStep.classList.contains('done')) {
+        nextStep.classList.add('active');
+      }
+      i++;
+      setTimeout(tick, delay);
+    }
+    tick();
+  });
+}
+
+function resetProcessingSteps() {
+  document.querySelectorAll('.processing-step').forEach(s => {
+    s.classList.remove('active', 'done');
+    s.querySelector('.step-icon').innerHTML = '&#9679;';
+  });
+  document.querySelector('.processing-step[data-step="analyze"]').classList.add('active');
+}
+
+// ===== Questions =====
+const ATTR_OPTIONS = {
+  category: {
+    label: 'До якої категорії належить ваш товар?',
+    options: [
+      { value: '4', label: '📱 Смартфони Apple' },
+      { value: '512', label: '👟 Кросівки' },
+      { value: '743', label: '🧱 Конструктори' },
+      { value: '795', label: '📚 Книги та журнали' },
+      { value: '1677', label: '🎭 Колекційні фігурки' },
+      { value: '1261', label: '🛞 Шини, диски і колеса' },
+      { value: '1320', label: '🪑 Стільці та крісла' },
+    ],
+  },
+  condition: {
+    label: 'Який стан вашого товару?',
+    options: [
+      { value: 'new', label: 'Новий' },
+      { value: 'like_new', label: 'Як новий' },
+      { value: 'good', label: 'Добрий' },
+      { value: 'fair', label: 'Задовільний' },
+      { value: 'needs_repair', label: 'Потребує ремонту' },
+    ],
+  },
+  cover_type: {
+    label: 'Тверда чи м\'яка обкладинка?',
+    options: [
+      { value: 'hard', label: 'Тверда' },
+      { value: 'soft', label: "М'яка" },
+    ],
+  },
+  gender: {
+    label: 'Для кого?',
+    options: [
+      { value: 'male', label: 'Чоловічі' },
+      { value: 'female', label: 'Жіночі' },
+      { value: 'unisex', label: 'Унісекс' },
+    ],
+  },
+  season: {
+    label: 'Який сезон?',
+    options: [
+      { value: 'summer', label: 'Літні' },
+      { value: 'winter', label: 'Зимові' },
+      { value: 'all_season', label: 'Всесезонні' },
+    ],
+  },
+  completeness: {
+    label: 'Набір повний?',
+    options: [
+      { value: 'complete', label: 'Так, повний' },
+      { value: 'partial', label: 'Частково' },
+      { value: 'incomplete', label: 'Неповний' },
+    ],
+  },
+  language: {
+    label: 'Якою мовою?',
+    options: [
+      { value: 'uk', label: 'Українська' },
+      { value: 'en', label: 'Англійська' },
+      { value: 'ru', label: 'Російська' },
+      { value: 'other', label: 'Інша' },
+    ],
+  },
+};
+
+const ATTR_LABELS = {
+  model: 'Модель', brand: 'Бренд', storage_gb: "Пам'ять",
+  color: 'Колір', battery_pct: 'Батарея', condition: 'Стан',
+  size_eu: 'Розмір EU', size: 'Розмір', neverlock: 'Neverlock',
+  set_number: '# набору', piece_count: 'Деталей', theme: 'Тема',
+  author: 'Автор', title: 'Назва', book_title: 'Назва',
+  cover_type: 'Обкладинка', language: 'Мова', character: 'Персонаж',
+  series: 'Серія', franchise: 'Франшиза', size_cm: 'Розмір (см)',
+  tire_brand: 'Бренд шин', season: 'Сезон', tread_mm: 'Протектор (мм)',
+  quantity: 'Кількість', type: 'Тип', material: 'Матеріал',
+  gender: 'Для кого', completeness: 'Комплектність',
+  is_set: 'Набір', photo_count: 'Фото',
+};
+
+const CONDITION_LABELS = {
+  'new': 'Новий', 'like_new': 'Як новий', 'very_good': 'Відмінний',
+  'good': 'Добрий', 'fair': 'Задовільний', 'needs_repair': 'Потребує ремонту',
+};
+
+function buildItemName(attrs, categoryId) {
+  const parts = [];
+  switch (categoryId) {
+    case 4: // Smartphones
+      if (attrs.brand && attrs.brand !== 'Apple') parts.push(attrs.brand);
+      if (attrs.model) parts.push(attrs.model);
+      if (attrs.storage_gb) parts.push(attrs.storage_gb + 'GB');
+      if (attrs.color) parts.push(attrs.color);
+      break;
+    case 512: // Sneakers
+      if (attrs.brand) parts.push(attrs.brand);
+      if (attrs.model || attrs.model_line) parts.push(attrs.model || attrs.model_line);
+      if (attrs.size_eu) parts.push(attrs.size_eu + ' EU');
+      break;
+    case 795: // Books
+      if (attrs.title || attrs.book_title) parts.push(attrs.title || attrs.book_title);
+      if (attrs.author) parts.push('— ' + attrs.author);
+      break;
+    case 743: // Constructors
+      if (attrs.brand) parts.push(attrs.brand);
+      if (attrs.set_number) parts.push('#' + attrs.set_number);
+      if (attrs.theme) parts.push(attrs.theme);
+      break;
+    case 1677: // Figures
+      if (attrs.brand) parts.push(attrs.brand);
+      if (attrs.character) parts.push(attrs.character);
+      if (attrs.series || attrs.franchise) parts.push(attrs.series || attrs.franchise);
+      break;
+    case 1261: // Wheels
+      if (attrs.tire_brand) parts.push(attrs.tire_brand);
+      if (attrs.size) parts.push(attrs.size);
+      if (attrs.season) {
+        const s = attrs.season === 'summer' ? 'літні' : attrs.season === 'winter' ? 'зимові' : 'всесезонні';
+        parts.push(s);
+      }
+      break;
+    case 1320: // Chairs
+      if (attrs.brand) parts.push(attrs.brand);
+      if (attrs.type) parts.push(attrs.type + ' крісло');
+      else parts.push('крісло');
+      break;
+  }
+  return parts.length > 0 ? parts.join(' ') : null;
+}
+
+function buildItemSpecs(attrs, categoryId) {
+  // Returns array of {label, value} for structured spec display
+  const specs = [];
+  const cond = CONDITION_LABELS[attrs.condition] || attrs.condition;
+
+  switch (categoryId) {
+    case 4:
+      if (attrs.model) specs.push({ label: 'Модель', value: attrs.model });
+      if (attrs.color) specs.push({ label: 'Колір', value: attrs.color });
+      if (attrs.storage_gb) specs.push({ label: "Пам'ять", value: attrs.storage_gb + ' ГБ' });
+      if (cond) specs.push({ label: 'Стан', value: cond });
+      if (attrs.battery_pct) specs.push({ label: 'Батарея', value: attrs.battery_pct + '%' });
+      specs.push({ label: 'Комплектація', value: 'тільки телефон' });
+      break;
+    case 512:
+      if (attrs.brand) specs.push({ label: 'Бренд', value: attrs.brand });
+      if (attrs.model) specs.push({ label: 'Модель', value: attrs.model });
+      if (attrs.size_eu) specs.push({ label: 'Розмір', value: attrs.size_eu + ' EU' });
+      if (attrs.color) specs.push({ label: 'Колір', value: attrs.color });
+      if (attrs.gender) specs.push({ label: 'Для кого', value: attrs.gender === 'male' ? 'чоловічі' : attrs.gender === 'female' ? 'жіночі' : 'унісекс' });
+      if (cond) specs.push({ label: 'Стан', value: cond });
+      break;
+    case 795:
+      if (attrs.title || attrs.book_title) specs.push({ label: 'Назва', value: attrs.title || attrs.book_title });
+      if (attrs.author) specs.push({ label: 'Автор', value: attrs.author });
+      if (attrs.publisher) specs.push({ label: 'Видавництво', value: attrs.publisher });
+      if (attrs.language) specs.push({ label: 'Мова', value: attrs.language === 'uk' ? 'українська' : attrs.language === 'en' ? 'англійська' : attrs.language });
+      if (attrs.cover_type) specs.push({ label: 'Обкладинка', value: attrs.cover_type === 'hard' ? 'тверда' : "м'яка" });
+      if (cond) specs.push({ label: 'Стан', value: cond });
+      break;
+    case 743:
+      if (attrs.brand) specs.push({ label: 'Бренд', value: attrs.brand });
+      if (attrs.set_number) specs.push({ label: 'Набір', value: '№' + attrs.set_number });
+      if (attrs.theme) specs.push({ label: 'Тема', value: attrs.theme });
+      if (attrs.piece_count) specs.push({ label: 'Деталей', value: attrs.piece_count });
+      if (attrs.completeness) specs.push({ label: 'Комплектність', value: ({complete:'повний набір', incomplete:'неповний', unknown:'невідомо'})[attrs.completeness] || attrs.completeness });
+      if (cond) specs.push({ label: 'Стан', value: cond });
+      break;
+    case 1677:
+      if (attrs.brand) specs.push({ label: 'Бренд', value: attrs.brand });
+      if (attrs.character) specs.push({ label: 'Персонаж', value: attrs.character });
+      if (attrs.series || attrs.franchise) specs.push({ label: 'Серія', value: attrs.series || attrs.franchise });
+      if (attrs.size_cm) specs.push({ label: 'Розмір', value: attrs.size_cm + ' см' });
+      if (cond) specs.push({ label: 'Стан', value: cond });
+      break;
+    case 1261:
+      if (attrs.tire_brand) specs.push({ label: 'Бренд', value: attrs.tire_brand });
+      if (attrs.size) specs.push({ label: 'Розмір', value: attrs.size });
+      if (attrs.season) specs.push({ label: 'Сезон', value: attrs.season === 'summer' ? 'літні' : attrs.season === 'winter' ? 'зимові' : 'всесезонні' });
+      if (attrs.tread_mm) specs.push({ label: 'Протектор', value: attrs.tread_mm + ' мм' });
+      if (attrs.quantity) specs.push({ label: 'Кількість', value: attrs.quantity + ' шт' });
+      if (cond) specs.push({ label: 'Стан', value: cond });
+      break;
+    case 1320:
+      if (attrs.brand) specs.push({ label: 'Бренд', value: attrs.brand });
+      if (attrs.type) specs.push({ label: 'Тип', value: attrs.type });
+      if (attrs.material) specs.push({ label: 'Матеріал', value: attrs.material });
+      if (attrs.color) specs.push({ label: 'Колір', value: attrs.color });
+      if (cond) specs.push({ label: 'Стан', value: cond });
+      break;
+    default:
+      if (cond) specs.push({ label: 'Стан', value: cond });
+  }
+  return specs;
+}
+
+function buildListingText(attrs, categoryId, conditionDetails) {
+  // Fallback description — only things NOT in the specs table.
+  // Generated text (state.aiListingText) takes priority when available.
+  const cond = attrs.condition || 'good';
+
+  const condDesc = {
+    'new': 'Абсолютно новий, в заводській упаковці. Жодних слідів використання, все в ідеальному стані.',
+    'like_new': 'Візуально не відрізняється від нового — жодних подряпин, сколів чи потертостей. Екран і корпус ідеальні.',
+    'very_good': 'Виглядає чудово — є лише мінімальні мікроподряпини, помітні тільки під певним кутом. Екран чистий.',
+    'good': 'Є незначні сліди використання — невеликі подряпинки на корпусі. Екран без пошкоджень. Все працює справно.',
+    'fair': 'Є помітні сліди використання — подряпини на корпусі, можливі невеликі сколи. Функціонально все працює.',
+    'needs_repair': 'Є суттєві пошкодження — потребує ремонту. Підійде для майстрів або на запчастини.',
+  }[cond] || '';
+
+  const lines = [];
+  lines.push(condDesc);
+
+  // Extras (not in specs table)
+  if (categoryId === 4) {
+    const extras = [];
+    if (attrs.has_box) extras.push('оригінальна коробка');
+    if (attrs.has_charger) extras.push('зарядний пристрій');
+    if (attrs.has_case) extras.push('чохол');
+    lines.push(extras.length > 0
+      ? `В комплекті: ${extras.join(', ')}.`
+      : 'Продається тільки телефон, без додаткових аксесуарів.');
+  }
+
+  lines.push('');
+  lines.push('Можливий торг. Відправка по всій Україні.');
+  return lines.join('\n');
+}
+
+function showQuestions() {
+  updateProgress(4);
+  showScreen('screenQuestions');
+
+  // Show detected attrs
+  const attrContainer = document.getElementById('detectedAttrs');
+  const tagsContainer = document.getElementById('attrTags');
+  const attrs = state.enrichedAttrs;
+
+  if (Object.keys(attrs).length > 0) {
+    attrContainer.classList.remove('hidden');
+    tagsContainer.innerHTML = Object.entries(attrs)
+      .filter(([k, v]) => v && v !== '' && v !== false && v !== 0 && !['photo_count'].includes(k))
+      .map(([k, v]) => {
+        const label = ATTR_LABELS[k] || k;
+        const val = v === true ? 'Так' : v;
+        return `<span class="attr-tag">${label}: ${val}</span>`;
+      }).join('');
+  } else {
+    attrContainer.classList.add('hidden');
+  }
+
+  renderQuestion();
+}
+
+function renderQuestion() {
+  const container = document.getElementById('questionContainer');
+  const idx = state.currentQuestion;
+  const total = state.questions.length;
+
+  if (idx >= total) {
+    submitPhase2();
+    return;
+  }
+
+  const questionText = state.questions[idx];
+  const attrKey = state.stillMissing[idx] || null;
+  const attrDef = attrKey ? ATTR_OPTIONS[attrKey] : null;
+
+  let html = `
+    <div class="question-card">
+      <h3>${attrDef ? attrDef.label : questionText}</h3>
+      <span class="question-counter">Питання ${idx + 1} з ${total}</span>
+    </div>
+  `;
+
+  if (attrDef && attrDef.options) {
+    html += '<div class="option-list">';
+    attrDef.options.forEach(opt => {
+      const sel = state.answers[attrKey] === opt.value ? 'selected' : '';
+      html += `<button class="option-btn ${sel}" onclick="selectOption('${attrKey}', '${opt.value}', this)">${opt.label}</button>`;
+    });
+    html += '</div>';
+  } else {
+    const existing = attrKey ? (state.answers[attrKey] || '') : '';
+    html += `<input class="text-input" id="questionInput" type="text" placeholder="Введіть відповідь" value="${existing}" onkeydown="if(event.key==='Enter')nextQuestion()">`;
+  }
+
+  container.innerHTML = html;
+
+  // Focus text input if present
+  const input = document.getElementById('questionInput');
+  if (input) setTimeout(() => input.focus(), 100);
+
+  // Update progress segments
+  const progressRatio = (idx + 1) / total;
+  updateProgress(4);
+}
+
+function selectOption(attrKey, value, btn) {
+  state.answers[attrKey] = value;
+  document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+
+  // Auto-advance after short delay
+  setTimeout(() => nextQuestion(), 250);
+}
+
+function nextQuestion() {
+  const idx = state.currentQuestion;
+  const attrKey = state.stillMissing[idx] || `q${idx}`;
+
+  // Save text input answer
+  const input = document.getElementById('questionInput');
+  if (input && input.value.trim()) {
+    state.answers[attrKey] = input.value.trim();
+  }
+
+  state.currentQuestion++;
+  renderQuestion();
+}
+
+function skipQuestion() {
+  state.currentQuestion++;
+  renderQuestion();
+}
+
+// ===== Phase 2 Submit =====
+async function submitPhase2() {
+  updateProgress(5);
+  showScreen('screenProcessing');
+  resetProcessingSteps();
+
+  document.getElementById('processingTitle').textContent = 'Розраховуємо ціну...';
+  document.getElementById('processingSubtitle').textContent = 'Шукаємо аналоги та рахуємо ціну';
+
+  animateProcessingSteps(['analyze', 'category'], 300);
+
+  // If user selected a category manually, re-run Phase 1 with it
+  if (state.answers.category && !state.phase1.category_id) {
+    const catId = parseInt(state.answers.category);
+    try {
+      const rerunResp = await fetch(`${API_BASE}/pre-analyze`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          description: state.description || 'товар',
+          photos: [],
+          category_id: catId,
+        }),
+      });
+      if (rerunResp.ok) {
+        const ph1 = await rerunResp.json();
+        state.phase1 = ph1;
+        state.enrichedAttrs = ph1.structured_attrs || {};
+      } else {
+        state.phase1.category_id = catId;
+      }
+    } catch (e) {
+      state.phase1.category_id = catId;
+    }
+    delete state.answers.category;
+  }
+
+  // Merge answers into attrs — user answers WIN over photo/regex guesses
+  const mergedAttrs = { ...state.enrichedAttrs, ...state.answers };
+
+  // Build enriched description for FAISS search
+  // IMPORTANT: use user's original description (not photo-enriched one that may contain
+  // wrong model guesses), then append ALL final attr values (user answers override photo guesses)
+  const userDesc = state.description || '';
+  const allAttrParts = Object.entries(mergedAttrs)
+    .filter(([k, v]) => v && !['condition', 'category', 'photo_count', 'is_set'].includes(k))
+    .map(([k, v]) => String(v));
+  const enrichedDesc = [userDesc, ...allAttrParts].filter(Boolean).join(' ');
+
+  const enrichedItem = {
+    category_id: state.phase1.category_id,
+    category_name: state.phase1.category_name || '',
+    structured_attrs: mergedAttrs,
+    enriched_description: enrichedDesc,
+    condition_details: state.photoAnalysis?.condition_details || '',
+  };
+
+  const payload = {
+    enriched_item: enrichedItem,
+    answers: state.answers,
+    photos: [],  // already analyzed by vision model
+  };
+
+  try {
+    // Full pricing (FAISS + OLX + LLM, ~6 seconds)
+    await animateProcessingSteps(['search'], 300);
+    const resp = await fetch(`${API_BASE}/price/clarify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({ detail: 'Server error' }));
+      throw new Error(err.detail || `HTTP ${resp.status}`);
+    }
+
+    await animateProcessingSteps(['price'], 200);
+    state.result = await resp.json();
+    // Save AI listing text from Phase 2 response
+    console.log('[Flow] listing_text:', state.result.listing_text ? 'YES (' + state.result.listing_text.length + ' chars)' : 'EMPTY');
+    console.log('[Flow] explanation_source:', state.result.metadata?.explanation_source || state.result.explanation_source);
+    if (state.result.listing_text) {
+      state.aiListingText = state.result.listing_text;
+    }
+    showResults();
+
+  } catch (err) {
+    showError(err.message);
+  }
+}
+
+// ===== Results =====
+function showResults() {
+  updateProgress(5);
+  showScreen('screenResults');
+
+  const r = state.result;
+  const strategies = r.strategies || [];
+
+  // Slider range
+  const slider = document.getElementById('priceSlider');
+  const minPrice = strategies.length >= 1 ? strategies[0].price : (r.price_range?.min || 0);
+  const maxPrice = strategies.length >= 3 ? strategies[2].price : (r.price_range?.max || 0);
+
+  slider.min = Math.floor(minPrice);
+  slider.max = Math.ceil(maxPrice);
+  slider.step = getSliderStep(maxPrice);
+
+  document.getElementById('sliderMin').innerHTML = formatPrice(minPrice) + ' &#8372;';
+  document.getElementById('sliderMax').innerHTML = formatPrice(maxPrice) + ' &#8372;';
+
+  // Select balanced strategy by default
+  selectStrategy(1);
+
+  // Market analysis (hide card if empty)
+  if (r.market_analysis) {
+    document.getElementById('marketAnalysisText').textContent = r.market_analysis;
+    document.getElementById('cardAnalysis').style.display = '';
+  } else {
+    document.getElementById('cardAnalysis').style.display = 'none';
+  }
+
+  // Confidence
+  const conf = Math.round((r.confidence || 0) * 100);
+  const confFill = document.getElementById('confidenceFill');
+  const confLabel = document.getElementById('confidenceLabel');
+  confLabel.textContent = conf + '%';
+  confFill.style.background = conf >= 70 ? 'var(--success)' : conf >= 40 ? 'var(--warning)' : 'var(--error)';
+  setTimeout(() => { confFill.style.width = conf + '%'; }, 100);
+
+  // Recommendation
+  if (r.recommendation) {
+    document.getElementById('recommendationText').textContent = r.recommendation;
+    document.getElementById('cardRecommendation').classList.remove('hidden');
+  }
+
+  // Condition impact
+  if (r.condition_impact) {
+    document.getElementById('conditionText').textContent = r.condition_impact;
+    document.getElementById('cardCondition').classList.remove('hidden');
+  }
+
+  // Tips
+  if (r.tips && r.tips.length > 0) {
+    const tipsList = document.getElementById('tipsList');
+    tipsList.innerHTML = r.tips.map(t => `<li>${t}</li>`).join('');
+    document.getElementById('cardTips').classList.remove('hidden');
+  }
+
+  // Comparables — mini-ad cards with photos
+  const comps = r.market_context?.monobazar?.top_comparables || [];
+  if (comps.length > 0) {
+    const compEl = document.getElementById('comparablesList');
+    compEl.innerHTML = comps.map(c => {
+      const isSold = c.status === 'SOLD';
+      const price = isSold ? (c.sold_price || c.price) : c.price;
+      const photoUrl = (c.photo_urls && c.photo_urls.length > 0) ? c.photo_urls[0] : null;
+      const photoHtml = photoUrl
+        ? `<img src="${photoUrl}" alt="" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\'no-photo\\'>&#128247;</div>'">`
+        : `<div class="no-photo">&#128247;</div>`;
+      return `
+        <div class="comp-card">
+          <div class="comp-card-photo">${photoHtml}</div>
+          <div class="comp-card-info">
+            <div class="comp-card-title">${c.title}</div>
+            <div class="comp-card-bottom">
+              <span class="comp-card-price">${formatPrice(price)} &#8372;</span>
+              <span class="comp-card-status ${isSold ? 'sold' : 'active'}">${isSold ? 'Продано' : 'Активне'}</span>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+    document.getElementById('cardComparables').classList.remove('hidden');
+  }
+}
+
+function selectStrategy(idx) {
+  const strategies = state.result?.strategies || [];
+  if (!strategies[idx]) return;
+
+  const s = strategies[idx];
+  const price = s.price;
+
+  // Update buttons
+  document.querySelectorAll('.strategy-btn').forEach((btn, i) => {
+    btn.classList.toggle('active', i === idx);
+  });
+
+  // Update price
+  updatePriceDisplay(price);
+
+  // Update slider
+  const slider = document.getElementById('priceSlider');
+  slider.value = price;
+
+  // Update strategy description
+  document.getElementById('daysBadge').textContent = `~${Math.round(s.days_estimate)} днів`;
+  document.getElementById('strategyText').textContent = s.description || s.name;
+}
+
+// Slider input handler
+document.getElementById('priceSlider').addEventListener('input', function() {
+  const val = parseFloat(this.value);
+  updatePriceDisplay(val);
+
+  // Deselect strategy buttons when manually sliding
+  document.querySelectorAll('.strategy-btn').forEach(b => b.classList.remove('active'));
+
+  // Find closest strategy
+  const strategies = state.result?.strategies || [];
+  let closestIdx = 0;
+  let minDist = Infinity;
+  strategies.forEach((s, i) => {
+    const d = Math.abs(s.price - val);
+    if (d < minDist) { minDist = d; closestIdx = i; }
+  });
+
+  // Snap to strategy if very close
+  const threshold = (strategies[2]?.price - strategies[0]?.price) * 0.08;
+  if (minDist < threshold) {
+    document.querySelectorAll('.strategy-btn')[closestIdx]?.classList.add('active');
+  }
+
+  // Update days estimate based on interpolation
+  if (strategies.length >= 3) {
+    const daysFast = strategies[0].days_estimate;
+    const daysMax = strategies[2].days_estimate;
+    const ratio = (val - strategies[0].price) / (strategies[2].price - strategies[0].price);
+    const days = Math.round(daysFast + ratio * (daysMax - daysFast));
+    document.getElementById('daysBadge').textContent = `~${Math.max(1, days)} днів`;
+  }
+});
+
+function updatePriceDisplay(price) {
+  const rounded = Math.round(price);
+  const input = document.getElementById('priceInput');
+  input.value = formatPrice(rounded);
+  input.style.width = (input.value.length + 1) * 24 + 'px';
+
+  const net = (rounded * 0.981).toFixed(2);
+  document.getElementById('netPrice').innerHTML = formatPriceDecimal(net) + ' &#8372;';
+}
+
+function formatPriceDecimal(n) {
+  const parts = parseFloat(n).toFixed(2).split('.');
+  parts[0] = parseInt(parts[0]).toLocaleString('uk-UA');
+  return parts.join(',');
+}
+
+function clampPrice(val) {
+  return Math.min(1000000, Math.max(1, val));
+}
+
+// Manual price input handler
+document.getElementById('priceInput').addEventListener('input', function() {
+  const raw = this.value.replace(/[^\d]/g, '');
+  let val = parseInt(raw) || 0;
+  // Limit to 1 000 000
+  if (val > 1000000) {
+    val = 1000000;
+    this.value = '1000000';
+  }
+
+  // Update slider position
+  const slider = document.getElementById('priceSlider');
+  slider.value = Math.min(Math.max(val, parseInt(slider.min)), parseInt(slider.max));
+
+  // Update net price with 2 decimals
+  const net = (val * 0.981).toFixed(2);
+  document.getElementById('netPrice').innerHTML = formatPriceDecimal(net) + ' &#8372;';
+
+  // Deselect strategy buttons
+  document.querySelectorAll('.strategy-btn').forEach(b => b.classList.remove('active'));
+
+  this.style.width = (this.value.length + 1) * 24 + 'px';
+});
+
+document.getElementById('priceInput').addEventListener('blur', function() {
+  const raw = this.value.replace(/[^\d]/g, '');
+  let val = parseInt(raw) || 0;
+  val = clampPrice(val);
+  this.value = formatPrice(val);
+  this.style.width = (this.value.length + 1) * 24 + 'px';
+
+  // Update net on blur too (after clamping)
+  const net = (val * 0.981).toFixed(2);
+  document.getElementById('netPrice').innerHTML = formatPriceDecimal(net) + ' &#8372;';
+});
+
+document.getElementById('priceInput').addEventListener('focus', function() {
+  const raw = this.value.replace(/[^\d]/g, '');
+  this.value = raw;
+  this.select();
+  this.style.width = (this.value.length + 1) * 24 + 'px';
+});
+
+// ===== Listing Preview =====
+function showListingPreview() {
+  const r = state.result;
+  const catId = parseInt(r?.category_id || r?.metadata?.category_id || state.phase1?.category_id) || 0;
+  // Merge all attribute sources: Phase1 detected → API result → user answers (highest priority)
+  const phase1Attrs = state.phase1?.structured_attrs || {};
+  const a = { ...phase1Attrs, ...(state.enrichedAttrs || {}), ...(r?.structured_attrs || {}), ...(state.answers || {}) };
+  for (const k of Object.keys(a)) { if (a[k] === null || a[k] === undefined || a[k] === '') delete a[k]; }
+  console.log('[Listing] attrs for specs:', JSON.stringify(a));
+
+  const itemName = buildItemName(a, catId) || state.description || 'Ваш товар';
+  const specs = buildItemSpecs(a, catId);
+  const condDetails = state.photoAnalysis?.condition_details || '';
+
+  // Build full description: specs lines + AI/fallback text, all editable
+  const aiText = state.aiListingText || (state.result && state.result.listing_text) || '';
+  const bodyText = aiText || buildListingText(a, catId, condDetails);
+  // Specs as text lines at the top
+  const specsText = specs.map(s => `${s.label}: ${s.value}`).join('\n');
+  const fullDesc = state.listingDesc || [specsText, '', bodyText].filter(Boolean).join('\n');
+
+  const currentPrice = parseInt(document.getElementById('priceInput').value.replace(/[^\d]/g, '')) || 0;
+
+  // Photos grid: first big, rest small, max 5 shown
+  let photosHtml = '';
+  if (state.photos.length > 0) {
+    const maxShow = Math.min(state.photos.length, 5);
+    const photoItems = state.photos.slice(0, maxShow).map((p, i) => {
+      let overlay = '';
+      if (i === maxShow - 1 && state.photos.length > maxShow) {
+        overlay = `<div class="listing-preview-photo-more">+${state.photos.length - maxShow}</div>`;
+      }
+      return `<div class="listing-preview-photo"><img src="${p.url}" alt="">${overlay}</div>`;
+    }).join('');
+    const cls = `listing-preview-photos photos-${maxShow}`;
+    photosHtml = `<div class="${cls}">${photoItems}</div>`;
+  }
+
+  const body = document.getElementById('listingModalBody');
+  body.innerHTML = `
+    ${photosHtml}
+    <div class="listing-preview-title">${itemName}</div>
+    <div class="listing-preview-price">${formatPrice(currentPrice)} &#8372;</div>
+    <div class="listing-preview-desc-label">&#9998; Опис (можна редагувати)</div>
+    <textarea class="listing-preview-desc" id="listingDescText" rows="10">${fullDesc || 'Додайте опис товару...'}</textarea>
+    <div class="listing-preview-actions">
+      <button class="btn-listing-fav">&#10084;</button>
+      <button class="btn-listing-create" onclick="closeListingModal()">Створити оголошення</button>
+    </div>
+  `;
+
+  document.getElementById('listingModal').classList.remove('hidden');
+
+  // Auto-resize textarea
+  const ta = document.getElementById('listingDescText');
+  if (ta) {
+    ta.style.height = 'auto';
+    ta.style.height = ta.scrollHeight + 'px';
+    ta.addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = this.scrollHeight + 'px';
+    });
+  }
+}
+
+function closeListingModal() {
+  // Save edited description before closing
+  const ta = document.getElementById('listingDescText');
+  if (ta) {
+    state.listingDesc = ta.value;
+  }
+  document.getElementById('listingModal').classList.add('hidden');
+}
+
+// Close modal on overlay click
+document.addEventListener('click', function(e) {
+  const modal = document.getElementById('listingModal');
+  if (e.target === modal) {
+    closeListingModal();
+  }
+});
+
+// ===== Helpers =====
+function formatPrice(n) {
+  return Math.round(n).toLocaleString('uk-UA');
+}
+
+function getSliderStep(maxPrice) {
+  if (maxPrice > 50000) return 500;
+  if (maxPrice > 10000) return 100;
+  if (maxPrice > 1000) return 50;
+  return 10;
+}
+
+function showError(msg) {
+  document.getElementById('errorText').textContent = msg || 'Щось пішло не так';
+  showScreen('screenError');
+}
+
+function resetAll() {
+  // Clear state
+  state.photos.forEach(p => URL.revokeObjectURL(p.url));
+  state.photos = [];
+  state.description = '';
+  state.categoryId = null;
+  state.phase1 = null;
+  state.photoAnalysisPromise = null;
+  state.photoAnalysis = null;
+  state.preAnalyzePromise = null;
+  state.preAnalyzeDone = false;
+  state.questions = [];
+  state.stillMissing = [];
+  state.enrichedAttrs = {};
+  state.currentQuestion = 0;
+  state.answers = {};
+  state.result = null;
+  state.listingDesc = '';
+  state.aiListingText = '';
+
+  // Reset UI
+  descInput.value = '';
+  charCount.textContent = '0/500';
+  document.getElementById('categorySelect').value = '';
+  renderPhotos();
+  resetProcessingSteps();
+  document.getElementById('processingTitle').textContent = 'ШI аналізує ваш товар...';
+  document.getElementById('processingSubtitle').textContent = 'Це може зайняти кілька секунд';
+
+  // Hide result cards
+  ['cardCondition', 'cardTips', 'cardComparables', 'detectedAttrs', 'listingModal'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.add('hidden');
+  });
+
+  updateProgress(1);
+  showScreen('screenPhotos');
+}
+
+// Init
+updateProgress(1);
+</script>
+</body>
+</html>

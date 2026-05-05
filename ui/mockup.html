@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Monobazar Pricing Agent</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #000;
+  --card: #111;
+  --card2: #1a1a1a;
+  --border: #222;
+  --text: #fff;
+  --text2: #999;
+  --text3: #666;
+  --accent: #e44;
+  --accent2: #c33;
+  --green: #2a2;
+  --green-bg: rgba(34,170,34,.12);
+  --blue: #4af;
+  --blue-bg: rgba(68,170,255,.1);
+  --yellow: #fa0;
+  --yellow-bg: rgba(255,170,0,.1);
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+  background: #000;
+  color: var(--text);
+  display: flex;
+  justify-content: center;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+.phone {
+  width: 100%;
+  max-width: 390px;
+  min-height: 100vh;
+  background: var(--bg);
+  position: relative;
+  overflow-x: hidden;
+}
+
+.screen {
+  display: none;
+  flex-direction: column;
+  min-height: 100vh;
+  padding: 0 16px 100px;
+  animation: fadeIn .3s ease;
+}
+.screen.active { display: flex; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Header */
+.header {
+  display: flex;
+  align-items: center;
+  padding: 56px 0 16px;
+  gap: 12px;
+}
+.header .back {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: var(--card);
+  border: none;
+  color: var(--text);
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.header h1 {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -.3px;
+}
+
+/* Form elements */
+.field-label {
+  font-size: 13px;
+  color: var(--text2);
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+
+textarea, select {
+  width: 100%;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: 15px;
+  padding: 12px 14px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color .2s;
+  -webkit-appearance: none;
+}
+textarea:focus, select:focus { border-color: var(--text3); }
+textarea { resize: none; height: 88px; line-height: 1.4; }
+select { height: 46px; cursor: pointer; }
+
+.field-group { margin-bottom: 16px; }
+
+/* Photo upload */
+.photo-zone {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color .2s, background .2s;
+  margin-bottom: 16px;
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  position: relative;
+}
+.photo-zone.has-photos {
+  padding: 10px;
+  border-style: solid;
+  border-color: var(--border);
+}
+.photo-zone:hover, .photo-zone.drag-over {
+  border-color: var(--accent);
+  background: rgba(238,68,68,.04);
+}
+.photo-zone input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.photo-icon { font-size: 32px; opacity: .5; }
+.photo-hint { font-size: 13px; color: var(--text3); }
+.photo-hint b { color: var(--text2); }
+
+.photo-grid {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+.photo-thumb {
+  width: 64px; height: 64px;
+  border-radius: 8px;
+  background: var(--card2);
+  overflow: hidden;
+  position: relative;
+  flex-shrink: 0;
+}
+.photo-thumb img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+}
+.photo-thumb .remove {
+  position: absolute;
+  top: 2px; right: 2px;
+  width: 20px; height: 20px;
+  background: rgba(0,0,0,.7);
+  border-radius: 50%;
+  border: none;
+  color: #fff;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.photo-add-btn {
+  width: 64px; height: 64px;
+  border-radius: 8px;
+  background: var(--card2);
+  border: 1px dashed var(--text3);
+  color: var(--text3);
+  font-size: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* CTA button */
+.cta {
+  width: 100%;
+  padding: 16px;
+  border-radius: var(--radius);
+  border: none;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: transform .1s, opacity .15s;
+  letter-spacing: -.2px;
+}
+.cta:active { transform: scale(.98); }
+.cta-primary {
+  background: var(--accent);
+  color: #fff;
+}
+.cta-primary:disabled {
+  opacity: .4;
+  cursor: default;
+}
+.cta-secondary {
+  background: var(--card);
+  color: var(--text2);
+  border: 1px solid var(--border);
+}
+.cta-bottom {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 390px;
+  width: 100%;
+  padding: 12px 16px;
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+  background: linear-gradient(transparent, #000 20%);
+  z-index: 10;
+}
+.cta-bottom .cta { width: 100%; }
+
+/* Loading */
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 60px 20px;
+}
+.spinner {
+  width: 36px; height: 36px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text { font-size: 14px; color: var(--text2); text-align: center; }
+
+/* ===== Screen 2: Clarification ===== */
+.ai-message {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 20px;
+  position: relative;
+}
+.ai-message::before {
+  content: '';
+  position: absolute;
+  bottom: -6px; left: 20px;
+  width: 12px; height: 12px;
+  background: var(--card);
+  transform: rotate(45deg);
+}
+.ai-avatar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.ai-dot {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 800;
+}
+.ai-name { font-size: 13px; color: var(--text2); font-weight: 600; }
+.ai-text { font-size: 15px; line-height: 1.5; }
+
+.question-group { margin-bottom: 20px; }
+.question-label {
+  font-size: 13px;
+  color: var(--text2);
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+.option-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.option-btn {
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 14px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all .15s;
+}
+.option-btn:hover { border-color: var(--text3); }
+.option-btn.selected {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+/* ===== Screen 3: Result ===== */
+.section-title {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  letter-spacing: -.2px;
+}
+
+/* Price scale */
+.price-scale {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 20px 16px;
+  margin-bottom: 16px;
+}
+.scale-bar-wrap { margin-top: 16px; }
+.scale-bar {
+  height: 8px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--green), var(--yellow), var(--accent));
+  position: relative;
+  margin: 0 4px;
+}
+.scale-marker {
+  position: absolute;
+  top: -6px;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  border: 3px solid #fff;
+  transform: translateX(-50%);
+  box-shadow: 0 2px 8px rgba(0,0,0,.5);
+}
+.scale-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+  font-size: 11px;
+  color: var(--text3);
+}
+.scale-labels span { text-align: center; }
+.rec-price {
+  text-align: center;
+  margin-bottom: 4px;
+}
+.rec-price .amount {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -1px;
+}
+.rec-price .currency { font-size: 18px; color: var(--text2); margin-left: 2px; }
+.rec-price .label { font-size: 12px; color: var(--text2); margin-top: 2px; }
+
+/* Strategy cards */
+.strategies { margin-bottom: 20px; }
+.strategy-cards {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x mandatory;
+  padding-bottom: 4px;
+}
+.strategy-cards::-webkit-scrollbar { display: none; }
+.strategy-card {
+  flex: 0 0 calc(33.33% - 6px);
+  min-width: 110px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px 10px;
+  scroll-snap-align: start;
+  cursor: pointer;
+  transition: border-color .15s;
+  text-align: center;
+}
+.strategy-card:hover { border-color: var(--text3); }
+.strategy-card.active { border-color: var(--accent); }
+.strategy-icon { font-size: 20px; margin-bottom: 6px; }
+.strategy-name { font-size: 11px; color: var(--text2); font-weight: 600; text-transform: uppercase; letter-spacing: .3px; margin-bottom: 6px; }
+.strategy-price { font-size: 18px; font-weight: 800; letter-spacing: -.5px; }
+.strategy-days { font-size: 11px; color: var(--text3); margin-top: 4px; }
+.strategy-desc { font-size: 11px; color: var(--text3); margin-top: 6px; line-height: 1.3; }
+
+/* Comparable section */
+.comp-section { margin-bottom: 20px; }
+.comp-scroll {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 4px;
+}
+.comp-scroll::-webkit-scrollbar { display: none; }
+.comp-card {
+  flex: 0 0 150px;
+  background: var(--card);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.comp-img {
+  width: 100%; height: 100px;
+  background: var(--card2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  color: var(--text3);
+}
+.comp-info { padding: 10px; }
+.comp-title {
+  font-size: 12px;
+  color: var(--text2);
+  line-height: 1.3;
+  margin-bottom: 4px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.comp-price { font-size: 15px; font-weight: 700; }
+.comp-status {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+  display: inline-block;
+  margin-top: 4px;
+}
+.comp-status.sold { background: var(--green-bg); color: var(--green); }
+.comp-status.active { background: var(--blue-bg); color: var(--blue); }
+
+/* OLX section */
+.olx-card {
+  display: flex;
+  align-items: center;
+  background: var(--card);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  margin-bottom: 8px;
+  gap: 12px;
+  border: 1px solid var(--border);
+  text-decoration: none;
+  color: inherit;
+  transition: border-color .15s;
+}
+.olx-card:hover { border-color: var(--text3); }
+.olx-thumb {
+  width: 48px; height: 48px;
+  border-radius: 8px;
+  background: var(--card2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.olx-info { flex: 1; min-width: 0; }
+.olx-title {
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.olx-source { font-size: 11px; color: var(--text3); }
+.olx-price { font-size: 15px; font-weight: 700; flex-shrink: 0; }
+
+/* AI explanation */
+.explanation {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.explanation p { font-size: 14px; line-height: 1.55; color: var(--text2); }
+
+/* Price factor tags */
+.factors { margin-bottom: 20px; }
+.factor-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.factor-tag {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.factor-tag.positive { background: var(--green-bg); color: var(--green); }
+.factor-tag.negative { background: rgba(238,68,68,.1); color: var(--accent); }
+.factor-tag.neutral { background: var(--blue-bg); color: var(--blue); }
+
+/* Confidence */
+.confidence-bar {
+  margin-bottom: 20px;
+}
+.conf-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.conf-track {
+  flex: 1;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.conf-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: var(--green);
+  transition: width .6s ease;
+}
+.conf-label { font-size: 12px; color: var(--text2); flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+<div class="phone">
+
+  <!-- ==================== SCREEN 1: Create Listing ==================== -->
+  <div class="screen active" id="screen1">
+    <div class="header">
+      <h1>Нове оголошення</h1>
+    </div>
+
+    <div class="field-group">
+      <div class="field-label">Опис товару</div>
+      <textarea id="desc-input" placeholder="Опишіть ваш товар: модель, стан, комплектацію...">iPhone 13 Pro Max 256GB, стан ідеальний, батарея 92%, повний комплект, колір Sierra Blue</textarea>
+    </div>
+
+    <div class="field-label">Фотографії (до 5)</div>
+    <div class="photo-zone" id="photo-zone">
+      <div class="photo-icon">&#128247;</div>
+      <div class="photo-hint"><b>Натисніть</b> або перетягніть фото</div>
+      <input type="file" id="file-input" accept="image/*" multiple>
+    </div>
+
+    <div class="field-group">
+      <div class="field-label">Категорія</div>
+      <select id="cat-select">
+        <option value="">Автовизначення</option>
+        <option value="4" selected>Смартфони / Apple</option>
+        <option value="512">Кросівки</option>
+        <option value="743">Конструктори</option>
+        <option value="795">Книги та журнали</option>
+        <option value="1677">Колекційні фігурки</option>
+        <option value="1261">Шини, диски і колеса</option>
+        <option value="1320">Стільці</option>
+      </select>
+    </div>
+
+    <div style="height: 80px"></div>
+    <div class="cta-bottom">
+      <button class="cta cta-primary" id="btn-price" onclick="goToScreen(2)">
+        Дізнатись ціну
+      </button>
+    </div>
+  </div>
+
+  <!-- ==================== SCREEN 2: Clarification ==================== -->
+  <div class="screen" id="screen2">
+    <div class="header">
+      <button class="back" onclick="goToScreen(1)">&larr;</button>
+      <h1>Уточнення</h1>
+    </div>
+
+    <div id="clarify-loading" class="loading">
+      <div class="spinner"></div>
+      <div class="loading-text">Аналізую фотографії та опис...</div>
+    </div>
+
+    <div id="clarify-content" style="display: none">
+      <div class="ai-message">
+        <div class="ai-avatar">
+          <div class="ai-dot">M</div>
+          <div class="ai-name">Monobazar AI</div>
+        </div>
+        <div class="ai-text">
+          Я бачу, що це <b>iPhone 13 Pro Max</b> у кольорі <b>Sierra Blue</b>. Стан виглядає ідеальним, батарея 92%. Підкажіть ще кілька деталей:
+        </div>
+      </div>
+
+      <div class="question-group">
+        <div class="question-label">Чи є оригінальна коробка?</div>
+        <div class="option-btns">
+          <button class="option-btn selected" onclick="selectOption(this)">Так, повний комплект</button>
+          <button class="option-btn" onclick="selectOption(this)">Тільки телефон</button>
+          <button class="option-btn" onclick="selectOption(this)">Коробка + зарядка</button>
+        </div>
+      </div>
+
+      <div class="question-group">
+        <div class="question-label">Тип блокування</div>
+        <div class="option-btns">
+          <button class="option-btn selected" onclick="selectOption(this)">Neverlock</button>
+          <button class="option-btn" onclick="selectOption(this)">RSIM</button>
+          <button class="option-btn" onclick="selectOption(this)">Залочений</button>
+        </div>
+      </div>
+
+      <div class="question-group">
+        <div class="question-label">Чи були ремонти?</div>
+        <div class="option-btns">
+          <button class="option-btn selected" onclick="selectOption(this)">Без ремонтів</button>
+          <button class="option-btn" onclick="selectOption(this)">Замінено екран</button>
+          <button class="option-btn" onclick="selectOption(this)">Замінено батарею</button>
+          <button class="option-btn" onclick="selectOption(this)">Інший ремонт</button>
+        </div>
+      </div>
+
+      <div style="height: 90px"></div>
+      <div class="cta-bottom">
+        <button class="cta cta-primary" onclick="goToScreen(3)" style="margin-bottom:8px">Продовжити</button>
+        <button class="cta cta-secondary" onclick="goToScreen(3)">Пропустити</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== SCREEN 3: Result ==================== -->
+  <div class="screen" id="screen3">
+    <div class="header">
+      <button class="back" onclick="goToScreen(1)">&larr;</button>
+      <h1>Рекомендована ціна</h1>
+    </div>
+
+    <div id="result-loading" class="loading">
+      <div class="spinner"></div>
+      <div class="loading-text">Аналізую ринок та шукаю аналоги...</div>
+    </div>
+
+    <div id="result-content" style="display: none">
+
+      <!-- Price scale -->
+      <div class="price-scale">
+        <div class="rec-price">
+          <div><span class="amount">16 400</span><span class="currency">&#8372;</span></div>
+          <div class="label">збалансована ціна</div>
+        </div>
+        <div class="scale-bar-wrap">
+          <div class="scale-bar">
+            <div class="scale-marker" style="left: 18%; background: var(--green);" title="Швидкий"></div>
+            <div class="scale-marker" style="left: 50%; background: var(--yellow);" title="Збалансована"></div>
+            <div class="scale-marker" style="left: 82%; background: var(--accent);" title="Максимальна"></div>
+          </div>
+          <div class="scale-labels">
+            <span>13 200 &#8372;</span>
+            <span>14 800 &#8372;</span>
+            <span>16 400 &#8372;</span>
+            <span>18 100 &#8372;</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Strategies -->
+      <div class="strategies">
+        <div class="section-title">Стратегія ціноутворення</div>
+        <div class="strategy-cards">
+          <div class="strategy-card" onclick="selectStrategy(this, 14800)">
+            <div class="strategy-icon">&#9889;</div>
+            <div class="strategy-name">Швидкий</div>
+            <div class="strategy-price">14 800 &#8372;</div>
+            <div class="strategy-days">~3 дні</div>
+            <div class="strategy-desc">Нижче ринку, продаж за 1-3 дні</div>
+          </div>
+          <div class="strategy-card active" onclick="selectStrategy(this, 16400)">
+            <div class="strategy-icon">&#9878;</div>
+            <div class="strategy-name">Збалансований</div>
+            <div class="strategy-price">16 400 &#8372;</div>
+            <div class="strategy-days">~7 днів</div>
+            <div class="strategy-desc">Оптимальна ціна за ринковими даними</div>
+          </div>
+          <div class="strategy-card" onclick="selectStrategy(this, 18100)">
+            <div class="strategy-icon">&#128176;</div>
+            <div class="strategy-name">Максимум</div>
+            <div class="strategy-price">18 100 &#8372;</div>
+            <div class="strategy-days">~14 днів</div>
+            <div class="strategy-desc">Вище ринку, потрібно чекати</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Monobazar comparables -->
+      <div class="comp-section">
+        <div class="section-title">Схожі товари на Монобазарі</div>
+        <div class="comp-scroll">
+          <div class="comp-card">
+            <div class="comp-img">&#128241;</div>
+            <div class="comp-info">
+              <div class="comp-title">iPhone 13 Pro Max 256GB Gold</div>
+              <div class="comp-price">16 500 &#8372;</div>
+              <div class="comp-status sold">Продано</div>
+            </div>
+          </div>
+          <div class="comp-card">
+            <div class="comp-img">&#128241;</div>
+            <div class="comp-info">
+              <div class="comp-title">iPhone 13 Pro Max 256GB Graphite</div>
+              <div class="comp-price">17 200 &#8372;</div>
+              <div class="comp-status sold">Продано</div>
+            </div>
+          </div>
+          <div class="comp-card">
+            <div class="comp-img">&#128241;</div>
+            <div class="comp-info">
+              <div class="comp-title">iPhone 13 Pro 256GB Sierra Blue</div>
+              <div class="comp-price">15 800 &#8372;</div>
+              <div class="comp-status active">Активне</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- OLX section -->
+      <div class="comp-section">
+        <div class="section-title">Ціни на OLX</div>
+        <a class="olx-card" href="#" onclick="return false">
+          <div class="olx-thumb">&#128242;</div>
+          <div class="olx-info">
+            <div class="olx-title">iPhone 13 Pro Max 256 ідеальний стан</div>
+            <div class="olx-source">olx.ua</div>
+          </div>
+          <div class="olx-price">17 500 &#8372;</div>
+        </a>
+        <a class="olx-card" href="#" onclick="return false">
+          <div class="olx-thumb">&#128242;</div>
+          <div class="olx-info">
+            <div class="olx-title">iPhone 13 Pro Max 256GB Neverlock</div>
+            <div class="olx-source">olx.ua</div>
+          </div>
+          <div class="olx-price">16 000 &#8372;</div>
+        </a>
+        <a class="olx-card" href="#" onclick="return false">
+          <div class="olx-thumb">&#128242;</div>
+          <div class="olx-info">
+            <div class="olx-title">Apple iPhone 13 Pro Max 256 Blue</div>
+            <div class="olx-source">olx.ua</div>
+          </div>
+          <div class="olx-price">15 900 &#8372;</div>
+        </a>
+      </div>
+
+      <!-- AI explanation -->
+      <div class="explanation">
+        <div class="section-title">Аналіз ринку</div>
+        <p>
+          iPhone 13 Pro Max 256GB в ідеальному стані з батареєю 92% &mdash; затребувана модель на ринку.
+          Медіана проданих аналогів на Монобазарі: <b>16 500 &#8372;</b> (8 продажів за останній місяць).
+          На OLX аналогічні пропозиції коштують 15 900 &ndash; 17 500 &#8372;.
+          Рекомендуємо збалансовану ціну <b>16 400 &#8372;</b> &mdash; це дозволить продати за ~7 днів з урахуванням можливого торгу.
+        </p>
+      </div>
+
+      <!-- Price factors -->
+      <div class="factors">
+        <div class="section-title">Фактори ціни</div>
+        <div class="factor-tags">
+          <span class="factor-tag positive">Pro Max &uarr;</span>
+          <span class="factor-tag positive">256GB &uarr;</span>
+          <span class="factor-tag positive">Батарея 92% &uarr;</span>
+          <span class="factor-tag positive">Neverlock &uarr;</span>
+          <span class="factor-tag neutral">Sierra Blue &rarr;</span>
+          <span class="factor-tag positive">Повний комплект &uarr;</span>
+        </div>
+      </div>
+
+      <!-- Confidence -->
+      <div class="confidence-bar">
+        <div class="section-title">Впевненість оцінки</div>
+        <div class="conf-row">
+          <div class="conf-track">
+            <div class="conf-fill" style="width: 93%"></div>
+          </div>
+          <div class="conf-label">93%</div>
+        </div>
+      </div>
+
+      <div style="height: 90px"></div>
+      <div class="cta-bottom">
+        <button class="cta cta-primary" id="btn-set-price" onclick="alert('Ціну встановлено!')">
+          Встановити ціну: 16 400 &#8372;
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Navigation
+function goToScreen(n) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const screen = document.getElementById('screen' + n);
+  screen.classList.add('active');
+  window.scrollTo(0, 0);
+
+  if (n === 2) {
+    document.getElementById('clarify-loading').style.display = 'flex';
+    document.getElementById('clarify-content').style.display = 'none';
+    setTimeout(() => {
+      document.getElementById('clarify-loading').style.display = 'none';
+      document.getElementById('clarify-content').style.display = 'block';
+    }, 1500);
+  }
+  if (n === 3) {
+    document.getElementById('result-loading').style.display = 'flex';
+    document.getElementById('result-content').style.display = 'none';
+    setTimeout(() => {
+      document.getElementById('result-loading').style.display = 'none';
+      document.getElementById('result-content').style.display = 'block';
+    }, 2200);
+  }
+}
+
+// Option selection
+function selectOption(btn) {
+  const group = btn.closest('.option-btns');
+  group.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+
+// Strategy selection
+function selectStrategy(card, price) {
+  document.querySelectorAll('.strategy-card').forEach(c => c.classList.remove('active'));
+  card.classList.add('active');
+  const formatted = price.toLocaleString('uk-UA').replace(',', ' ');
+  document.getElementById('btn-set-price').innerHTML = 'Встановити ціну: ' + formatted + ' \u20B4';
+  document.querySelector('.rec-price .amount').textContent = formatted;
+}
+
+// Photo upload
+const photoZone = document.getElementById('photo-zone');
+const fileInput = document.getElementById('file-input');
+let photos = [];
+
+photoZone.addEventListener('dragover', e => { e.preventDefault(); photoZone.classList.add('drag-over'); });
+photoZone.addEventListener('dragleave', () => photoZone.classList.remove('drag-over'));
+photoZone.addEventListener('drop', e => {
+  e.preventDefault();
+  photoZone.classList.remove('drag-over');
+  addFiles(e.dataTransfer.files);
+});
+
+fileInput.addEventListener('change', e => addFiles(e.target.files));
+
+function addFiles(files) {
+  for (const file of files) {
+    if (photos.length >= 5) break;
+    if (!file.type.startsWith('image/')) continue;
+    const reader = new FileReader();
+    reader.onload = e => {
+      photos.push(e.target.result);
+      renderPhotos();
+    };
+    reader.readAsDataURL(file);
+  }
+}
+
+function removePhoto(i) {
+  photos.splice(i, 1);
+  renderPhotos();
+}
+
+function renderPhotos() {
+  if (photos.length === 0) {
+    photoZone.innerHTML = `
+      <div class="photo-icon">&#128247;</div>
+      <div class="photo-hint"><b>Натисніть</b> або перетягніть фото</div>
+      <input type="file" id="file-input" accept="image/*" multiple>
+    `;
+    photoZone.classList.remove('has-photos');
+    document.getElementById('file-input').addEventListener('change', e => addFiles(e.target.files));
+    return;
+  }
+
+  let html = '<div class="photo-grid">';
+  photos.forEach((src, i) => {
+    html += `<div class="photo-thumb">
+      <img src="${src}" alt="">
+      <button class="remove" onclick="event.stopPropagation();removePhoto(${i})">&times;</button>
+    </div>`;
+  });
+  if (photos.length < 5) {
+    html += `<label class="photo-add-btn" for="file-input-add">+</label>
+      <input type="file" id="file-input-add" accept="image/*" multiple
+        style="display:none" onchange="addFiles(this.files)">`;
+  }
+  html += '</div>';
+  photoZone.innerHTML = html;
+  photoZone.classList.add('has-photos');
+}
+</script>
+</body>
+</html>
