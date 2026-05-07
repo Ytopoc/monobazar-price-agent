@@ -1,3 +1,5 @@
+[**English**](README.md) | [Українська](README.uk.md)
+
 # Monobazar Pricing Agent
 
 Automatic price-recommendation service for second-hand listings on the Monobazari marketplace. Given seller-supplied photos and a description, it returns three pricing strategies (fast sale / balanced / maximum) along with an estimated time-to-sell and a short explanation.
