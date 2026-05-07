@@ -100,7 +100,7 @@ class CategoryFAISSIndex:
 
     def add(self, vector: np.ndarray, metadata: Dict[str, Any]) -> None:
         if self._index is None:
-            raise RuntimeError("Index not built yet — call build() first")
+            raise RuntimeError("Index not built yet - call build() first")
         v = vector.astype(np.float32)
         if v.ndim == 1:
             v = v.reshape(1, -1)
@@ -109,7 +109,7 @@ class CategoryFAISSIndex:
 
     def save(self, path: str | Path) -> None:
         if self._index is None:
-            raise RuntimeError("Nothing to save — index not built")
+            raise RuntimeError("Nothing to save - index not built")
         dirpath = Path(path)
         dirpath.mkdir(parents=True, exist_ok=True)
 

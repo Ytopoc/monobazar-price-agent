@@ -160,7 +160,7 @@ class PricingAgent:
         }]
 
         if not settings.anthropic_api_key:
-            logger.info("No ANTHROPIC_API_KEY — using fallback")
+            logger.info("No ANTHROPIC_API_KEY - using fallback")
             return self._build_fallback_explanation(prediction, local_result, olx_result)
 
         try:
@@ -383,7 +383,7 @@ class PricingAgent:
             )
 
             olx_items_str = "; ".join(
-                f"{it.get('title', '')} — {it.get('price', 0)}₴"
+                f"{it.get('title', '')} - {it.get('price', 0)}₴"
                 for it in olx_result.get("olx_items", [])[:5]
             )
             try:
@@ -543,18 +543,18 @@ class PricingAgent:
             f"збалансована {prediction['price_balanced']}₴ (~{prediction['days_balanced']}дн), "
             f"макс {prediction['price_max']}₴ (~{prediction['days_max']}дн).\n\n"
             f"Зроби 2 речі:\n"
-            f"1. strategies — 3 короткі описи цінових стратегій (по 1 речення).\n"
-            f"2. listing_text — опис оголошення (3-5 рядків, через \\n).\n\n"
+            f"1. strategies - 3 короткі описи цінових стратегій (по 1 речення).\n"
+            f"2. listing_text - опис оголошення (3-5 рядків, через \\n).\n\n"
             f"СУВОРІ ПРАВИЛА для listing_text:\n"
-            f"- НЕ повторюй характеристики (назву, модель, колір, пам'ять, батарею, ціну, стан, комплектність) — вони вже є окремо.\n"
+            f"- НЕ повторюй характеристики (назву, модель, колір, пам'ять, батарею, ціну, стан, комплектність) - вони вже є окремо.\n"
             f"- Пиши ТІЛЬКИ ФАКТИ з опису та атрибутів. НЕ ВИГАДУЙ нічого.\n"
-            f"- Якщо є 'Деталі стану (з фото)' — ОБОВ'ЯЗКОВО опиши ці пошкодження в тексті.\n"
+            f"- Якщо є 'Деталі стану (з фото)' - ОБОВ'ЯЗКОВО опиши ці пошкодження в тексті.\n"
             f"- НЕ вигадуй дефекти яких НЕМАЄ в описі чи деталях стану.\n"
             f"- НЕ пиши про чохол якщо в атрибутах немає has_case.\n"
-            f"- НЕ пиши про торг, відправку, доставку — ти цього не знаєш.\n"
+            f"- НЕ пиши про торг, відправку, доставку - ти цього не знаєш.\n"
             f"- НЕ вигадуй імена людей, посилання, сервіси, назви магазинів.\n"
             f"- Опиши: що це за товар, його переваги, для кого підійде.\n"
-            f"- Якщо стан needs_repair і в описі вказано що саме зламано — напиши це.\n"
+            f"- Якщо стан needs_repair і в описі вказано що саме зламано - напиши це.\n"
             f"- Пиши коротко, по суті, живою українською мовою.\n\n"
             f"Відповідай ТІЛЬКИ JSON:\n"
             f'{{"strategies":["опис1","опис2","опис3"],"listing_text":"текст"}}'
@@ -715,7 +715,7 @@ class PricingAgent:
 
         rec_parts = []
         rec_parts.append(
-            f"Рекомендуємо збалансовану ціну {p_balanced:.0f} грн — "
+            f"Рекомендуємо збалансовану ціну {p_balanced:.0f} грн - "
             f"оптимальне співвідношення ціни та швидкості продажу "
             f"(орієнтовно {d_balanced} днів)."
         )
@@ -766,12 +766,12 @@ class PricingAgent:
         market_analysis = " ".join(market_parts) if market_parts else ""
 
         _COND_LABELS = {
-            "new": "Новий товар — ціна максимальна.",
-            "like_new": "Стан «як новий» — ціна близька до нового.",
-            "very_good": "Стан «дуже добрий» — мінімальна знижка за стан (~3%).",
-            "good": "Стан «добрий» — помірна знижка за стан (~7%).",
-            "fair": "Стан «задовільний» — помітні сліди використання, знижка ~15%.",
-            "needs_repair": "Потребує ремонту — суттєва знижка (~40%).",
+            "new": "Новий товар - ціна максимальна.",
+            "like_new": "Стан «як новий» - ціна близька до нового.",
+            "very_good": "Стан «дуже добрий» - мінімальна знижка за стан (~3%).",
+            "good": "Стан «добрий» - помірна знижка за стан (~7%).",
+            "fair": "Стан «задовільний» - помітні сліди використання, знижка ~15%.",
+            "needs_repair": "Потребує ремонту - суттєва знижка (~40%).",
         }
         condition_impact = _COND_LABELS.get(condition)
 
@@ -780,18 +780,18 @@ class PricingAgent:
             try:
                 bp = float(battery_pct)
                 if bp < 70:
-                    condition_impact = (condition_impact or "") + f" Батарея {bp:.0f}% — знижка ~15%."
+                    condition_impact = (condition_impact or "") + f" Батарея {bp:.0f}% - знижка ~15%."
                 elif bp < 85:
-                    condition_impact = (condition_impact or "") + f" Батарея {bp:.0f}% — знижка ~7%."
+                    condition_impact = (condition_impact or "") + f" Батарея {bp:.0f}% - знижка ~7%."
                 elif bp < 93:
-                    condition_impact = (condition_impact or "") + f" Батарея {bp:.0f}% — невелика знижка ~3%."
+                    condition_impact = (condition_impact or "") + f" Батарея {bp:.0f}% - невелика знижка ~3%."
             except (ValueError, TypeError):
                 pass
 
         tips = []
         tips = tips[:3]
 
-        fast_desc = f"Швидкий продаж за {prediction['days_fast']} днів. Нижче за медіану — привабить покупців одразу."
+        fast_desc = f"Швидкий продаж за {prediction['days_fast']} днів. Нижче за медіану - привабить покупців одразу."
         balanced_desc = f"Оптимальна ринкова ціна. Продаж орієнтовно за {d_balanced} днів."
         max_desc = f"Максимум, якщо готові чекати ~{prediction['days_max']} днів. Для терплячих продавців."
 

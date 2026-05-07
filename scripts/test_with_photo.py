@@ -28,7 +28,7 @@ def main():
 
     print(f"Image: {image_path} ({len(b64) // 1024} KB base64)")
     print(f"Category: {category_id}")
-    print(f"Description: {description or '(empty — will use photo only)'}")
+    print(f"Description: {description or '(empty - will use photo only)'}")
     print()
 
     payload = {

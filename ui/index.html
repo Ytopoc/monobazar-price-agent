@@ -1615,7 +1615,7 @@ function startPreAnalyze() {
     photos: state.photos.map(p => p.b64),
   };
 
-  // Deep photo analysis with vision model — runs while user types description
+  // Deep photo analysis with vision model - runs while user types description
   console.log('[Photo] Starting deep photo analysis...');
   state.photoAnalysisPromise = fetch(`${API_BASE}/analyze-photos`, {
     method: 'POST',
@@ -1680,7 +1680,7 @@ async function submitPhase1() {
 
     const descPayload = {
       description: state.description || 'товар',
-      photos: [],  // no photos — already analyzed by vision model
+      photos: [],  // no photos - already analyzed by vision model
     };
     if (state.categoryId) descPayload.category_id = state.categoryId;
 
@@ -1700,7 +1700,7 @@ async function submitPhase1() {
 
     // ---- 3. Merge attrs: description attrs WIN over photo guesses ----
     const mergedAttrs = { ...(ph1.structured_attrs || {}) };
-    // NEVER take "model" from photos — vision model often guesses wrong
+    // NEVER take "model" from photos - vision model often guesses wrong
     const _PHOTO_SKIP_ATTRS = ['model'];
     for (const [k, v] of Object.entries(photoAttrs)) {
       if (_PHOTO_SKIP_ATTRS.includes(k)) continue;
@@ -1793,7 +1793,7 @@ async function submitPhase1() {
     }
 
     // ---- 3c. Vague description check ----
-    // If STILL no category AND description is too vague — force questions
+    // If STILL no category AND description is too vague - force questions
     const hasModel = !!(mergedAttrs.model || mergedAttrs.set_number || mergedAttrs.title || mergedAttrs.tire_brand);
     const hasBrand = !!(mergedAttrs.brand);
     const isVague = !categoryId && !hasModel && !hasBrand;
@@ -1841,14 +1841,14 @@ async function submitPhase1() {
         const val = mergedAttrs[attr];
         // Skip if we already have a meaningful value for this attr
         if (val && val !== '' && val !== null && val !== undefined) {
-          console.log(`[Flow] Skipping question for "${attr}" — already known: ${val}`);
+          console.log(`[Flow] Skipping question for "${attr}" - already known: ${val}`);
           continue;
         }
         filteredMissing.push(attr);
         if (i < rawQuestions.length) filteredQuestions.push(rawQuestions[i]);
       }
 
-      // If all questions were filtered out — proceed directly
+      // If all questions were filtered out - proceed directly
       if (filteredMissing.length === 0) {
         console.log('[Flow] All missing attrs already known from photos, proceeding...');
       } else {
@@ -1870,7 +1870,7 @@ async function submitPhase1() {
     }
 
     // ---- 5. Can proceed → Full pricing ----
-    // categoryId can be null — AI-only fallback will handle it on backend
+    // categoryId can be null - AI-only fallback will handle it on backend
 
     await animateProcessingSteps(['search', 'price'], 300);
 
@@ -1887,7 +1887,7 @@ async function submitPhase1() {
       body: JSON.stringify({
         enriched_item: enrichedItem,
         answers: {},
-        photos: [],  // don't send photos again — already analyzed
+        photos: [],  // don't send photos again - already analyzed
       }),
     });
 
@@ -2109,7 +2109,7 @@ function buildItemName(attrs, categoryId) {
       break;
     case 795: // Books
       if (attrs.title || attrs.book_title) parts.push(attrs.title || attrs.book_title);
-      if (attrs.author) parts.push('— ' + attrs.author);
+      if (attrs.author) parts.push('- ' + attrs.author);
       break;
     case 743: // Constructors
       if (attrs.brand) parts.push(attrs.brand);
@@ -2205,17 +2205,17 @@ function buildItemSpecs(attrs, categoryId) {
 }
 
 function buildListingText(attrs, categoryId, conditionDetails) {
-  // Fallback description — only things NOT in the specs table.
+  // Fallback description - only things NOT in the specs table.
   // Generated text (state.aiListingText) takes priority when available.
   const cond = attrs.condition || 'good';
 
   const condDesc = {
     'new': 'Абсолютно новий, в заводській упаковці. Жодних слідів використання, все в ідеальному стані.',
-    'like_new': 'Візуально не відрізняється від нового — жодних подряпин, сколів чи потертостей. Екран і корпус ідеальні.',
-    'very_good': 'Виглядає чудово — є лише мінімальні мікроподряпини, помітні тільки під певним кутом. Екран чистий.',
-    'good': 'Є незначні сліди використання — невеликі подряпинки на корпусі. Екран без пошкоджень. Все працює справно.',
-    'fair': 'Є помітні сліди використання — подряпини на корпусі, можливі невеликі сколи. Функціонально все працює.',
-    'needs_repair': 'Є суттєві пошкодження — потребує ремонту. Підійде для майстрів або на запчастини.',
+    'like_new': 'Візуально не відрізняється від нового - жодних подряпин, сколів чи потертостей. Екран і корпус ідеальні.',
+    'very_good': 'Виглядає чудово - є лише мінімальні мікроподряпини, помітні тільки під певним кутом. Екран чистий.',
+    'good': 'Є незначні сліди використання - невеликі подряпинки на корпусі. Екран без пошкоджень. Все працює справно.',
+    'fair': 'Є помітні сліди використання - подряпини на корпусі, можливі невеликі сколи. Функціонально все працює.',
+    'needs_repair': 'Є суттєві пошкодження - потребує ремонту. Підійде для майстрів або на запчастини.',
   }[cond] || '';
 
   const lines = [];
@@ -2371,7 +2371,7 @@ async function submitPhase2() {
     delete state.answers.category;
   }
 
-  // Merge answers into attrs — user answers WIN over photo/regex guesses
+  // Merge answers into attrs - user answers WIN over photo/regex guesses
   const mergedAttrs = { ...state.enrichedAttrs, ...state.answers };
 
   // Build enriched description for FAISS search
@@ -2484,7 +2484,7 @@ function showResults() {
     document.getElementById('cardTips').classList.remove('hidden');
   }
 
-  // Comparables — mini-ad cards with photos
+  // Comparables - mini-ad cards with photos
   const comps = r.market_context?.monobazar?.top_comparables || [];
   if (comps.length > 0) {
     const compEl = document.getElementById('comparablesList');

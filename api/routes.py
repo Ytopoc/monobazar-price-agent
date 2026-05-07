@@ -206,7 +206,7 @@ async def _run_phase2(
 
     if category_id is None or category_id not in predictors:
         logger.info(
-            "No model for category %s — using AI-only pricing fallback",
+            "No model for category %s - using AI-only pricing fallback",
             category_id,
         )
         pricing_agent = PricingAgent(

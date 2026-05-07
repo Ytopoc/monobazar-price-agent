@@ -46,14 +46,14 @@ PHASE1_SYSTEM_PROMPT = """\
 
 
 PHASE2_SYSTEM_PROMPT = """\
-Ти експерт ціноутворення Монобазарі. Відповідай українською. Будь ЛАКОНІЧНИМ — description макс 1 речення.
+Ти експерт ціноутворення Монобазарі. Відповідай українською. Будь ЛАКОНІЧНИМ - description макс 1 речення.
 
 ТОВАР: {enriched_description}
 Атрибути: {structured_attrs}
 
 ML-ЦІНИ: швидкий {price_fast}₴ (~{days_fast}дн), збалансована {price_balanced}₴ (~{days_balanced}дн), макс {price_max}₴ (~{days_max}дн). Впевненість: {confidence}
 
-Схожі товари з бази ({comp_count}шт, УВАГА: можуть бути ІНШІ моделі/версії — не плутай з оцінюваним товаром!): {comparables}
+Схожі товари з бази ({comp_count}шт, УВАГА: можуть бути ІНШІ моделі/версії - не плутай з оцінюваним товаром!): {comparables}
 
 OLX: {olx_status}, {olx_count}шт, медіана {olx_median}₴, діапазон {olx_min}-{olx_max}₴
 Категорія: медіана {cat_price_median}₴, продаж ~{cat_avg_days}дн, торг {cat_bargain_rate}%
@@ -65,7 +65,7 @@ OLX: {olx_status}, {olx_count}шт, медіана {olx_median}₴, діапаз
 
 
 TEMPLATE_FALLBACK = """\
-Рекомендуємо збалансовану ціну {price_balanced} грн — оптимальне \
+Рекомендуємо збалансовану ціну {price_balanced} грн - оптимальне \
 співвідношення ціни та швидкості продажу (орієнтовно {days_balanced} днів). \
 Ціни розраховані на основі {comp_count} аналогічних товарів у базі."""
 
